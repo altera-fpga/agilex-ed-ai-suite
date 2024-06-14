@@ -1,0 +1,37 @@
+# Build-generated Folders
+board/
+dni/
+hld/
+ip/csr_gen
+ip/irq_controller
+ip/spi
+ip/temperature
+mem/
+pcie_ed/
+qdb/
+tmp-clearbox/
+
+# Build-generated Files
+*.log
+abc
+abc.cfm
+acl_quartus_report.txt
+board.qsys
+device.tcl
+dla_compile_report.json
+dla_failing_clocks.tcl
+dla_platform.sdc
+flat_*.hex
+flat.*
+hw_iface.iipx
+iface.ipx
+kernel_pll_refclk_freq.txt
+mem.qsys
+opencl_bsp_ip*
+pcie_ed.qsys
+pll_config.bin
+quartus.ini
+sw_iface.iipx
+top_post.sdc
+top.*
+traits.atom.cdbx

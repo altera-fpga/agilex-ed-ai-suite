@@ -1,0 +1,30 @@
+# Common scripting utilities used by OFS-based example designs.
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    echo "'ofs_build_env' must be sourced.  It cannot be called directly."
+    exit 1
+fi
+
+ED_BUILD_ROOT=$(dirname $(realpath ${BASH_SOURCE[0]}))
+OFS_BIN=$OPAE_PLATFORM_ROOT/bin
+
+function check_ofs_util() {
+    command -v "$1" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: Could not find $1; please ensure OFS is installed."
+        exit 1
+    fi
+}
+
+function check_opae_root() {
+    if [ -z ${OPAE_PLATFORM_ROOT:-} ]; then
+        echo "Error: The OPAE_PLATFORM_ROOT environment variable was not set.  Please ensure it points to an OFS FIM PR template."
+        exit 1
+    fi
+}
+
+function init_ofs_build_env() {
+    check_opae_root
+    check_ofs_util $OFS_BIN/run.sh
+    source $OFS_BIN/build_env_config
+}

@@ -1,0 +1,8 @@
+# Build-generated Folders
+ofs/
+dla_afu/
+
+# Build-generated Files
+*.log
+dla_afu.ip
+dla_compile_report.json

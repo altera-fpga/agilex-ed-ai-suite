@@ -28,8 +28,42 @@ The example design uses the `AGX7_Generic.arch` architecture.
 > [latest release]https://github.com/altera-fpga/agilex-ed-ai-suite/releases).
 
 Prepare the Quartus project with
+(Assuming Quartus is installed $HOME/intelFPGA_pro/24.1)
 
 ```bash
+# Install OPAE
+
+# Install OFS etc.
+
+# Enable Quartus environment
+export QUARTUS_VERSION=24.1
+export QUARTUS_INSTALL_DIR=$HOME/intelFPGA_pro/$QUARTUS_VERSION
+export QUARTUS_ROOTDIR="$QUARTUS_INSTALL_DIR/quartus"
+export QUARTUS_DIR="$QUARTUS_ROOTDIR"
+export DSPBA_ROOTDIR="$QUARTUS_ROOTDIR/dspba"
+export PATH="$DSPBA_ROOTDIR:$QUARTUS_ROOTDIR/bin:$QUARTUS_ROOTDIR/linux64:$QUARTUS_INSTALL_DIR/qsys/bin:$PATH"
+export QUARTUS_64BIT=1
+export LM_LICENSE_FILE="your_quartus_lic.dat"
+
+# Install OpenVINO Runtime into the default location in /opt/intel
+sudo mkdir /opt/intel
+curl -L https://storage.openvinotoolkit.org/repositories/openvino/packages/2023.3/linux/l_openvino_toolkit_rhel8_2023.3.0.13775.ceeafaf64f3_x86_64.tgz --output openvino_2023.3.0.tgz
+tar -xf openvino_2023.3.0.tgz
+sudo mv l_openvino_toolkit_rhel8_2023.3.0.13775.ceeafaf64f3_x86_64 /opt/intel/openvino_2023.3.0
+
+# Install required system dependencies on Linux
+cd /opt/intel/openvino_2023.3.0
+sudo -E ./install_dependencies/install_openvino_dependencies.sh
+
+# Create a symbolic link
+cd /opt/intel
+sudo ln -s openvino_2023.3.0 openvino_2023
+
+# Install the AI Suite into the default location in /opt/intel
+sudo subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+wget https://downloads.intel.com/akdlm/software/fpga_ai_suite/2024.3/intel-fpga-ai-suite-2024.3-1.el8.x86_64.rpm
+sudo dnf install intel-fpga-ai-suite-2024.3-1.el8.x86_64.rpm
+
 # Enable the OpenVINO and the AI Suite environments
 source /opt/intel/openvino_2023/setupvars.sh
 source /opt/intel/fpga_ai_suite_2024.3/dla/setupvars.sh
@@ -39,6 +73,7 @@ git clone https://github.com/altera-fpga/agilex-ed-ai-suite
 cd ai-suit-ed/agilex7/iseries_pcie
 
 # Prepare the OFS setup
+export OPAE_PLATFORM_ROOT="??/ofs_fim/2024.2/iseries/pr_build_template"
 ./setup_project.sh
 ```
 
@@ -103,6 +138,9 @@ run inference with `dla_benchmark`.
 
 ```shell
 cd ~/ai_suite_example/runtime
+
+# If OPAE has been installed into the default location, use:
+export OPAE_SDK_ROOT=/usr
 
 # Build the runtime
 ./build_runtime.sh -target_agx7_i_dk

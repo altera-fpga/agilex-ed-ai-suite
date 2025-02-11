@@ -4,7 +4,7 @@
 # arguments and must run before any bitstream compilation.
 
 source ./ofs_build_env
-
+check_opae_root
 check_ofs_util afu_synth_setup
 check_ofs_util ip-deploy
 

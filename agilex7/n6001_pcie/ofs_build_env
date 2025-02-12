@@ -18,12 +18,15 @@ function check_ofs_util() {
 
 function check_opae_root() {
     if [ -z ${OPAE_PLATFORM_ROOT:-} ]; then
-        echo "Error: The OPAE_PLATFORM_ROOT environment variable was not set.  Please ensure it points to an OFS FIM PR template."
+        echo "Error: The OPAE_PLATFORM_ROOT environment variable was not set."
+        echo "       Please ensure it points to an OFS FIM PR template."
         exit 1
     fi
 
     if [ -z ${OPAE_SDK_ROOT:-} ]; then
-        echo "Error: The OPAE_SDK_ROOT environment variable was not set.  Please ensure it points to an OPAE installation."
+        echo "Error: The OPAE_SDK_ROOT environment variable was not set."
+        echo "       Use \"export OPAE_SKD_ROOT=/usr\" if OPAE has already been installed"
+        echo "       into the default location.  Otherwise, run the OPAE setup script."
         exit 1
     fi
 }

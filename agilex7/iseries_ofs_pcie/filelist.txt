@@ -1,0 +1,39 @@
+# Platform configuration file
+dla_afu.json
+QI:afu_ip.qsf
+
+# toplevel verilog and PD files
+ase_hw.tcl
+dla_afu.ip
+dla_afu_hw.tcl
+parameters.tcl
+dla_host_mem_if_mux.sv
+ofs_plat_afu.sv
+
+# DMA controller
+ip/dma/dma_pkg.sv
+ip/dma/dma_fifo_if.sv
+ip/dma/dma_top.sv
+ip/dma/csr_mgr.sv
+ip/dma/dma_read_engine.sv
+ip/dma/dma_write_engine.sv
+ip/dma/dma_engine.sv
+ip/dma/dma_axi_mm_mux.sv
+ip/dma/dma_ddr_selector.sv
+
+# DFH registers
+ip/afu_id_avmm_slave/afu_id_avmm_slave.sv
+ip/afu_id_avmm_slave/afu_id_avmm_slave_hw.tcl
+
+# DLA platform interrupt retry
+ip/dla_platform/dla_platform_interrupt_retry.sv
+
+# SW reset
+ip/sw_reset/sw_reset.v
+ip/sw_reset/sw_reset_hw.tcl
+
+# DLA verilog
+QI:dla_platform.qsf
+dla_platform_wrapper.sv
+dla_platform_csr_axi_tie_off.sv
+dla_platform_hw_timer.sv

@@ -1,0 +1,4 @@
+add_fileset_file altera_ai_ip/dla_dma_param.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/AGX7_Generic_AGX7/dla_dma_param.svh
+add_fileset_file altera_ai_ip/dla_dma_csr_discovery_rom.mif MIF PATH ../altera_ai_ip/verilog/AGX7_Generic_AGX7/dla_dma_csr_discovery_rom.mif
+add_fileset_file altera_ai_ip/dla_interface_profiling_counters.mif MIF PATH ../altera_ai_ip/verilog/AGX7_Generic_AGX7/dla_interface_profiling_counters.mif
+add_fileset_file altera_ai_ip/dla_top_wrapper_AGX7_Generic_AGX7.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/AGX7_Generic_AGX7/dla_top_wrapper_AGX7_Generic_AGX7.sv

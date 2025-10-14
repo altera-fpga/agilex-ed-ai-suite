@@ -21,8 +21,8 @@ cd $QUARTUS_BUILD_DIR
 quartus_sh -t $REL_ROOT_DIR/../dla_parse_report.tcl \
     -project $Q_PROJECT \
     -revision $Q_PR_REVISION \
-    -ip-clock "afu_top|pg_afu.port_gasket|user_clock|qph_user_clk|qph_user_clk_iopll|iopll_0_outclk0" \
-    -platform-clock "afu_top|pg_afu.port_gasket|user_clock|qph_user_clk|qph_user_clk_iopll|iopll_0_outclk0" \
+    -ip-clock "afu_top|pg_afu.port_gasket|user_clock|qph_user_clk|pll.qph_user_clk_iopll|iopll_0_outclk0" \
+    -platform-clock "afu_top|pg_afu.port_gasket|user_clock|qph_user_clk|pll.qph_user_clk_iopll|iopll_0_outclk0" \
     -user-clock-file "./output_files/user_clock_freq.txt"
 
 mv dla_compile_report.json $ED_BUILD_ROOT/.

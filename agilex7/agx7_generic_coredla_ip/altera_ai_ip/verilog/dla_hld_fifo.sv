@@ -177,8 +177,15 @@ module dla_hld_fifo #(
 
     //fifo selection
     parameter string STYLE = "hs",              // see above table, legal values are "hs", "ms", "ll", "llreg", "llram", "zl", "zlreg", "zlram"
-    parameter enable_ecc = "FALSE"              // Enable error correction coding
+    parameter enable_ecc = "FALSE",             // Enable error correction coding
 
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY = dla_common_pkg::DEVICE_UNKNOWN,
+
+    //sim debug parameters
+    parameter bit SIM_ONLY_DEBUG_ENABLE_ALL = 1,                               //helper to turn on all debug features
+    parameter bit SIM_ONLY_DEBUG_TRACK_STATS = SIM_ONLY_DEBUG_ENABLE_ALL,      //set to 1 to enable tracking of total writes, total reads, occupancy (write used words), and max occupancy
+    parameter bit SIM_ONLY_DEBUG_ERROR_ON_X_INPUT = SIM_ONLY_DEBUG_ENABLE_ALL, //set to 1 to cause simulation to error if i_valid or i_stall is x or z, not allowed once reset has been deasserted
+    parameter bit SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW = SIM_ONLY_DEBUG_ENABLE_ALL //set to 1 to cause simulation to error if overflow happens, which can only happen if NEVER_OVERFLOWS=1
 )
 (
     input  wire                 clock,
@@ -244,10 +251,6 @@ module dla_hld_fifo #(
     // to assist in debug of surrounding logic outside of hld_fifo -- signals of interest are named sim_only_debug_***
     // technically this is synthesizable logic, but it would degrade fmax and it is not hooked up to anything
     // synthesis translate_off
-    localparam bit SIM_ONLY_DEBUG_ENABLE_ALL = 1;           //helper to turn on all debug features
-    localparam bit SIM_ONLY_DEBUG_TRACK_STATS = 0;          //set to 1 to enable tracking of total writes, total reads, occupancy (write used words), and max occupancy
-    localparam bit SIM_ONLY_DEBUG_ERROR_ON_X_INPUT = 0;     //set to 1 to cause simulation to error if i_valid or i_stall is x or z, not allowed once reset has been deasserted
-    localparam bit SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW = 0;    //set to 1 to cause simulation to error if overflow happens, which can only happen if NEVER_OVERFLOWS=1
     generate
     if (SIM_ONLY_DEBUG_ENABLE_ALL || SIM_ONLY_DEBUG_TRACK_STATS || SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW) begin
         int sim_only_debug_total_writes, sim_only_debug_total_reads, sim_only_debug_occupancy, sim_only_debug_max_occupancy;
@@ -696,6 +699,9 @@ module dla_hld_fifo #(
               //ram implementation
               .RAM_BLOCK_TYPE                 (RAM_BLOCK_TYPE),
 
+              //Device family
+              .DEVICE_FAMILY                  (DEVICE_FAMILY),
+
               //error correction code
               .enable_ecc                     (enable_ecc)
           )
@@ -762,6 +768,8 @@ module dla_hld_fifo #(
 
               //ram implementation
               .RAM_BLOCK_TYPE                 (RAM_BLOCK_TYPE),
+
+              .DEVICE_FAMILY                  (DEVICE_FAMILY),
 
               //error correction code
               .enable_ecc                     (enable_ecc)
@@ -830,7 +838,9 @@ module dla_hld_fifo #(
               .RAM_BLOCK_TYPE                 (RAM_BLOCK_TYPE),
 
               //error correction code
-              .enable_ecc                     (enable_ecc)
+              .enable_ecc                     (enable_ecc),
+
+              .DEVICE_FAMILY                  (DEVICE_FAMILY)
           )
           dla_acl_mid_speed_fifo_inst
           (

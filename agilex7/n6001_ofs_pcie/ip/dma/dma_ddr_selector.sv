@@ -16,7 +16,7 @@
 module dma_ddr_selector #(
    parameter ENABLE = 0,
    parameter NUM_LOCAL_MEM_BANKS = 1,
-   parameter ADDR_WIDTH = 2
+   parameter DDR_BANK_ADDR_WIDTH = 33
 )(
    input dma_pkg::t_dma_descriptor descriptor,
    ofs_plat_axi_mem_if.to_source_clk selected_ddr_mem,
@@ -33,11 +33,11 @@ module dma_ddr_selector #(
       channel_select = 'b0;
       case (descriptor.descriptor_control.mode) 
          dma_pkg::DDR_TO_HOST: begin 
-            channel_select = descriptor.src_addr[ADDR_WIDTH-1:ADDR_WIDTH-SEL_WIDTH];
+            channel_select = descriptor.src_addr[DDR_BANK_ADDR_WIDTH+SEL_WIDTH-1:DDR_BANK_ADDR_WIDTH];
          end
 
          dma_pkg::HOST_TO_DDR: begin 
-            channel_select = descriptor.dest_addr[ADDR_WIDTH-1:ADDR_WIDTH-SEL_WIDTH];
+            channel_select = descriptor.dest_addr[DDR_BANK_ADDR_WIDTH+SEL_WIDTH-1:DDR_BANK_ADDR_WIDTH];
          end
      endcase
   end

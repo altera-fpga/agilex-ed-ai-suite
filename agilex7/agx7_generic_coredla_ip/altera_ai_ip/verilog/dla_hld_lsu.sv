@@ -138,7 +138,8 @@ module dla_hld_lsu #(
     parameter int TOTAL_OCC_LIMIT,              //loose upper bound on the maximum number of threads allowed inside the LSU at any time, this bounds the counter width for o_active
     parameter int WRITEACK_WIDTH,               //writeack fifo indicate how many valids to release upon writeack, it uses narrow m20k, word coalescer stops to ensure value doesn't overflow narrow m20k width
     parameter int WORD_COAL_MAX_TIMEOUT_BIT,    //limit how large the dynamic timeout threshold can get inside word coalescer
-    parameter int BURST_COAL_MAX_TIMEOUT_BIT    //limit how large the dynamic timeout threshold can get inside burst coalescer
+    parameter int BURST_COAL_MAX_TIMEOUT_BIT,   //limit how large the dynamic timeout threshold can get inside burst coalescer
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
 ) (
     input  wire                             clock,
     input  wire                             resetn,
@@ -279,7 +280,8 @@ module dla_hld_lsu #(
             .ALMOST_FULL_CUTOFF         (KER_UP_STALL_LATENCY),
             .ASYNC_RESET                (ASYNC_RESET),
             .SYNCHRONIZE_RESET          (0),
-            .STYLE                      ("ms")
+            .STYLE                      ("ms"),
+            .DEVICE_FAMILY              (DEVICE_FAMILY)
         )
         predicate_fifo_ms_inst
         (
@@ -305,7 +307,8 @@ module dla_hld_lsu #(
             .DEPTH                      (2),
             .ASYNC_RESET                (ASYNC_RESET),
             .SYNCHRONIZE_RESET          (0),
-            .STYLE                      ("llreg")
+            .STYLE                      ("llreg"),
+            .DEVICE_FAMILY              (DEVICE_FAMILY)
         )
         predicate_fifo_ll_inst
         (
@@ -367,7 +370,8 @@ module dla_hld_lsu #(
         .ALMOST_FULL_CUTOFF     (KER_UP_STALL_LATENCY),
         .ASYNC_RESET            (ASYNC_RESET),
         .SYNCHRONIZE_RESET      (0),
-        .STYLE                  ("ms")
+        .STYLE                  ("ms"),
+        .DEVICE_FAMILY          (DEVICE_FAMILY)
     )
     input_wordaddr_fifo_inst
     (
@@ -400,7 +404,8 @@ module dla_hld_lsu #(
             .ALMOST_FULL_CUTOFF     (KER_UP_STALL_LATENCY),
             .ASYNC_RESET            (ASYNC_RESET),
             .SYNCHRONIZE_RESET      (0),
-            .STYLE                  ("ms")
+            .STYLE                  ("ms"),
+            .DEVICE_FAMILY          (DEVICE_FAMILY)
         )
         input_writedata_fifo_inst
         (
@@ -425,7 +430,8 @@ module dla_hld_lsu #(
                 .NEVER_OVERFLOWS        (1),
                 .ASYNC_RESET            (ASYNC_RESET),
                 .SYNCHRONIZE_RESET      (0),
-                .STYLE                  ("ms")
+                .STYLE                  ("ms"),
+                .DEVICE_FAMILY          (DEVICE_FAMILY)
             )
             input_byteenable_fifo_inst
             (
@@ -467,7 +473,8 @@ module dla_hld_lsu #(
         .MAX_MEM_WORDS_PER_KER_WORD     (MAX_MEM_WORDS_PER_KER_WORD),
         .MLAB_FIFO_DEPTH                (MLAB_FIFO_DEPTH),
         .WRITEACK_WIDTH                 (WRITEACK_WIDTH),
-        .WORD_COAL_MAX_TIMEOUT_BIT      (WORD_COAL_MAX_TIMEOUT_BIT)
+        .WORD_COAL_MAX_TIMEOUT_BIT      (WORD_COAL_MAX_TIMEOUT_BIT),
+        .DEVICE_FAMILY                  (DEVICE_FAMILY)
     )
     dla_hld_lsu_word_coalescer_inst
     (
@@ -605,7 +612,8 @@ module dla_hld_lsu #(
         .ADD_TO_ADDR_IS_ZERO            ((MAX_MEM_WORDS_PER_KER_WORD==1) ? 1 : 0),  //if lsu is aligned then burstcoal_add_to_base_addr will be 0, don't need adder inside burstcoal so some pipeline stages can be removed
         .EXTRA_WRITE_LATENCY            (BURST_COAL_EXTRA_WRITE_LATENCY),
         .USE_AXI                        (USE_AXI),
-        .ADDR_ADAPT_WIDTH               (ADDR_ADAPT_WIDTH)
+        .ADDR_ADAPT_WIDTH               (ADDR_ADAPT_WIDTH),
+        .DEVICE_FAMILY                  (DEVICE_FAMILY)
     )
     dla_hld_lsu_burst_coalescer_inst
     (
@@ -655,7 +663,8 @@ module dla_hld_lsu #(
             .KER_DATA_BYTES                 (KER_DATA_BYTES),
             .KER_DATA_BYTES_LAST            (KER_DATA_BYTES_LAST),
             .DATA_ALIGNER_MUX_PER_PIPE      (DATA_ALIGNER_MUX_PER_PIPE),
-            .M20K_WIDE_FIFO_DEPTH           (M20K_WIDE_FIFO_DEPTH)
+            .M20K_WIDE_FIFO_DEPTH           (M20K_WIDE_FIFO_DEPTH),
+            .DEVICE_FAMILY                  (DEVICE_FAMILY)
         )
         dla_hld_lsu_write_data_alignment_inst
         (
@@ -743,7 +752,8 @@ module dla_hld_lsu #(
             .TOTAL_OCC_LIMIT                (TOTAL_OCC_LIMIT),
             .BURSTCOUNT_WIDTH               (BURSTCOUNT_WIDTH),
             .ENABLE_BURST_COALESCE          (ENABLE_BURST_COALESCE),
-            .USE_AXI                        (USE_AXI)
+            .USE_AXI                        (USE_AXI),
+            .DEVICE_FAMILY                  (DEVICE_FAMILY)
         )
         dla_hld_lsu_write_kernel_downstream_inst
         (
@@ -798,7 +808,8 @@ module dla_hld_lsu #(
             .CACHE_BYPASS_DATA_FIFO         ((CACHE_SIZE_BYTES==0) ? 0 : 1),
             .MLAB_FIFO_DEPTH                (MLAB_FIFO_DEPTH),
             .DATA_ALIGNER_MUX_PER_PIPE      (DATA_ALIGNER_MUX_PER_PIPE),
-            .M20K_WIDE_FIFO_DEPTH           (M20K_WIDE_FIFO_DEPTH)
+            .M20K_WIDE_FIFO_DEPTH           (M20K_WIDE_FIFO_DEPTH),
+            .DEVICE_FAMILY                  (DEVICE_FAMILY)
         )
         read_data_alignment_inst
         (

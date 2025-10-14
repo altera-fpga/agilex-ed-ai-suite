@@ -21,6 +21,7 @@ module dla_degroup import dla_common_pkg::*; #(
   parameter   int WIDTH_IN_ELEMENTS            ,
   parameter   int ELEMENT_WIDTH                ,
   parameter   int OUTPUT_GROUP_DELAY = 0       ,
+  parameter   device_family_t DEVICE_FAMILY,
   localparam  int BUS_WIDTH = WIDTH_IN_ELEMENTS  * ELEMENT_WIDTH
 ) (
   input  wire   clk,
@@ -85,7 +86,9 @@ end else begin : gen_multi
         .RAM_BLOCK_TYPE              ( "MLAB"                            ),
 
         //fifo selection
-        .STYLE                       ( "ms"                              )
+        .STYLE                       ( "ms"                              ),
+
+        .DEVICE_FAMILY               ( DEVICE_FAMILY                     )
     ) u_fifo (
         .clock   ( clk                ),
         .resetn  ( i_sresetn          ),

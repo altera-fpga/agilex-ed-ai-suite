@@ -824,52 +824,24 @@ proc compose { } {
   set_connection_parameter_value dla_hw_timer_wrapper.m0/dla_hw_timer.s0 baseAddress {0x0}
   set_connection_parameter_value dla_hw_timer_wrapper.m0/dla_hw_timer.s0 defaultConnection {0}
 
-  add_connection dla_csr_pipe_all.m0/dla_csr0.s0 
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr0.s0 arbitrationPriority {1}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr0.s0 baseAddress {0x0}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr0.s0 defaultConnection {0}
-
-  add_connection dla_csr_pipe_all.m0/dla_csr1.s0 
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr1.s0 arbitrationPriority {1}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr1.s0 baseAddress {0x800}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr1.s0 defaultConnection {0}
-
-  add_connection dla_csr_pipe_all.m0/dla_csr2.s0 
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr2.s0 arbitrationPriority {1}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr2.s0 baseAddress {0x1000}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr2.s0 defaultConnection {0}
-
-  add_connection dla_csr_pipe_all.m0/dla_csr3.s0 
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr3.s0 arbitrationPriority {1}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr3.s0 baseAddress {0x1800}
-  set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr3.s0 defaultConnection {0}
-
   add_connection ase.expanded_master/ase_pipe_all.s0
   set_connection_parameter_value ase.expanded_master/ase_pipe_all.s0 arbitrationPriority {1}
   set_connection_parameter_value ase.expanded_master/ase_pipe_all.s0 baseAddress {0x0}
   set_connection_parameter_value ase.expanded_master/ase_pipe_all.s0 defaultConnection {0}
-
-  add_connection ase_pipe_all.m0/ase_pipe_ddr0.s0
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr0.s0 arbitrationPriority {1}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr0.s0 baseAddress {0x0}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr0.s0 defaultConnection {0}
-
-  add_connection ase_pipe_all.m0/ase_pipe_ddr1.s0
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr1.s0 arbitrationPriority {1}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr1.s0 baseAddress {0x200000000}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr1.s0 defaultConnection {0}
-
-  add_connection ase_pipe_all.m0/ase_pipe_ddr2.s0
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr2.s0 arbitrationPriority {1}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr2.s0 baseAddress {0x400000000}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr2.s0 defaultConnection {0}
-
-  add_connection ase_pipe_all.m0/ase_pipe_ddr3.s0
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr3.s0 arbitrationPriority {1}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr3.s0 baseAddress {0x600000000}
-  set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr3.s0 defaultConnection {0}
-
+ 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
+    set base_address [format 0x%x [expr ($i * 0x800)]]
+    add_connection dla_csr_pipe_all.m0/dla_csr$i.s0 
+    set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr$i.s0 arbitrationPriority {1}
+    set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr$i.s0 baseAddress $base_address
+    set_connection_parameter_value dla_csr_pipe_all.m0/dla_csr$i.s0 defaultConnection {0}
+
+    set base_address [format 0x%x [expr ($i * 0x200000000)]]
+    add_connection ase_pipe_all.m0/ase_pipe_ddr$i.s0
+    set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr$i.s0 arbitrationPriority {1}
+    set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr$i.s0 baseAddress $base_address
+    set_connection_parameter_value ase_pipe_all.m0/ase_pipe_ddr$i.s0 defaultConnection {0}
+
     add_connection dla_ddr_in$i.m0/mux_ddr_out$i.s0
     set_connection_parameter_value dla_ddr_in$i.m0/mux_ddr_out$i.s0 arbitrationPriority {1}
     set_connection_parameter_value dla_ddr_in$i.m0/mux_ddr_out$i.s0 baseAddress {0x0}

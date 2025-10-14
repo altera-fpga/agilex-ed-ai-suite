@@ -25,7 +25,7 @@
 
 module dma_top #(
     parameter NUM_LOCAL_MEM_BANKS = 1,
-    parameter DDR_ADDR_W = 35,
+    parameter DDR_BANK_ADDR_W = 33,
     parameter HOST_ADDR_W = 57
 )(
     // CSR interface (MMIO on the host)
@@ -35,6 +35,10 @@ module dma_top #(
     ofs_plat_axi_mem_if.to_sink host_mem,
     ofs_plat_axi_mem_if.to_sink ddr_mem[NUM_LOCAL_MEM_BANKS]
 );
+
+    // calculate total DDR memory map size
+    localparam DDR_ADDR_W = DDR_BANK_ADDR_W + $clog2(NUM_LOCAL_MEM_BANKS);
+
 
     // Each interface names its associated clock and reset.
     logic clk;
@@ -147,7 +151,7 @@ module dma_top #(
 
     dma_ddr_selector #(
         .NUM_LOCAL_MEM_BANKS (NUM_LOCAL_MEM_BANKS),
-        .ADDR_WIDTH(DDR_ADDR_W) 
+        .DDR_BANK_ADDR_WIDTH(DDR_BANK_ADDR_W)	
     ) ddr_selector (
         .descriptor(dma_descriptor),
         .selected_ddr_mem,

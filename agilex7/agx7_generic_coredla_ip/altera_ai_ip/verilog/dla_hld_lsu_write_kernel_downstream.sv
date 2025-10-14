@@ -42,59 +42,60 @@ module dla_hld_lsu_write_kernel_downstream #(
     parameter int WRITEACK_WIDTH,               //writeack fifo indicate how many valids to release upon writeack, it uses narrow m20k, word coalescer stops to ensure value doesn't overflow narrow m20k width
     parameter int BURSTCOUNT_WIDTH,             //width of avalon burst count signal, max burst size is 2**(BURSTCOUNT_WIDTH-1)
     parameter bit ENABLE_BURST_COALESCE,        //whether to coalesce sequential memory words together to make a burst
-    parameter bit USE_AXI                       //0 = use AvalonMM, 1 = use AXI
+    parameter bit USE_AXI,                      //0 = use AvalonMM, 1 = use AXI
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
 ) (
     input  wire         clock,
     input  wire         resetn,
-    
+
     //kernel word info from word coalescer
     input  wire         i_cmd_spans_two,            //kernel word spans at least two memory words
     input  wire         i_cmd_spans_three,          //kernel word spans three memory words
-    
+
     //unaligned controller
     input  wire         i_can_read_cmd_fifo,        //can make forward progress in processing this kernel word
     input  wire         i_cmd_fifo_rd_ack,          //done with all sections of kernel word
     input  wire         i_cmd_at_second_cycle,      //in the second clock cycle of processing current kernel word
     input  wire         i_cmd_at_third_cycle,       //in the third clock cycle of processing current kernel word
     input  wire         i_cmd_is_coalescing,        //does the current section of the kernel word coalesce with the next section (next section could be same or next kernel word)
-    
+
     //burst coalescer
     input  wire                         i_burstcoal_snoop_valid,        //watch when the output fifo from the burst coalescer is read
     input  wire  [BURSTCOUNT_WIDTH-1:0] i_burstcoal_snoop_burstsize,    //if ack is for an entire burst this indicates how many memory words are done, note there is still a conversion to kernel words
-    
+
     //write ack fifo
     input  wire         i_avm_writeack,             //from memory interface, write has committed to memory
     output logic        o_writeack_fifo_almost_full,//stop sending more writes if no more space to track how many kernel words have finished inside each memory word
-    
+
     //read side of predicate fifo
     input  wire         i_predicate_fifo_empty,     //fifo is empty
     input  wire         i_predicate_fifo_rd_data,   //0 = normal transaction, 1 = predicated (still need to release a valid to kernel downstream, but no memory transaction)
     output logic        o_predicate_fifo_rd_ack,    //read from fifo
-    
+
     //kernel downstream
     output logic        o_valid,                    //LSU has a transaction available, kernel downstream can but does not need to accept it if using stall valid, must accept it if using stall latency
     output logic        o_empty,                    //LSU does not have a transaction available for kernel downstream, meant to be used with stall latency
     output logic        o_almost_empty,             //LSU downstream interface does not have at least KER_DOWN_STALL_LATENCY transactions ready to be released
     input  wire         i_stall                     //backpressure from kernel downstream
 );
-    
+
     localparam int TOTAL_OCC_BITS = $clog2(TOTAL_OCC_LIMIT);    //how many bits are needed for an occupancy counter in the worst case that all threads inside the LSU are tracked by that counter
-    
+
     ///////////////
     //  Signals  //
     ///////////////
-    
+
     //reset
     logic                       aclrn, sclrn, resetn_synchronized;
-    
+
     //track when memory words and kernel words have finished
     logic                       done_with_mem_word;
     logic                 [1:0] done_with_ker_word;             //up to 2 kernel words can finish on the same clock cycle, see comments below
-    
+
     //writeack fifo
     logic                       writeack_fifo_wr_req, writeack_fifo_empty, writeack_fifo_rd_ack;
     logic  [WRITEACK_WIDTH-1:0] writeack_fifo_wr_data, writeack_fifo_rd_data;   //writeack_fifo data tracks how many valids can be released to kernel downstream upon receiving writeack
-    
+
     //kernel downstream
     logic  [WRITEACK_WIDTH-1:0] writeack_count_incr;            //transfer from writeack_fifo into writeack_count
     logic  [TOTAL_OCC_BITS-1:0] writeack_count;                 //in kernel downstream stalls for a long time, nearly all writes could accumulate here, size this counter the same width as o_active
@@ -109,13 +110,13 @@ module dla_hld_lsu_write_kernel_downstream #(
     logic                       output_count_decr;              //kernel downstream accepted a transaction
     logic                       output_count_almost_full;       //backpressure to stop transfer from mini_writeack_count
     logic                       not_empty;                      //occ tracker produces an inverted o_valid
-    
-    
-    
+
+
+
     /////////////
     //  Reset  //
     /////////////
-    
+
     dla_acl_reset_handler
     #(
         .ASYNC_RESET            (ASYNC_RESET),
@@ -132,28 +133,28 @@ module dla_hld_lsu_write_kernel_downstream #(
         .o_resetn_synchronized  (resetn_synchronized),
         .o_sclrn                (sclrn)
     );
-    
-    
-    
+
+
+
     //////////////////////////////////////////////////////////////
     //  Track when memory words and kernel words have finished  //
     //////////////////////////////////////////////////////////////
-    
+
     always_ff @(posedge clock) begin
         done_with_mem_word <= i_can_read_cmd_fifo & ~i_cmd_is_coalescing;
     end
-    
+
     generate
     if (HIGH_THROUGHPUT_MODE && MAX_MEM_WORDS_PER_KER_WORD >= 2) begin : TWO_DONE_WITH_KER_WORD
         //in high throughput mode, if the last section of kernel word N is in the same memory word as the first section of kernel word N+1, then the unaligned controller
         //allocates no time for the last section of kernel word N, this data is kept live in registers and is processed on the same clock cycle as the first section of kernel word N+1
         //until the first section of kernel word N+1 is processed, we cannot claim the write has finished for kernel word N
         //it is also possible that kernel word N+1 fits within one memory word, so we need to say two writes have finished on the same clock cycle
-        
+
         logic has_leftover;             //last section of kernel word N is in same memory word as first section of kernel word N+1, there will be some leftover data that kernel word N+1 will deal with at the same time
         logic done_with_ker_word_a;     //kernel word N+1 has finished using the above example
         logic done_with_ker_word_b;     //kernel word N has finished, this is only delayed by one clock since it can happen any time after done_with_mem_word, look at how writeack_fifo_wr_data accumulates and clears
-        
+
         assign has_leftover = (i_cmd_spans_three) ? ~i_cmd_at_third_cycle : (i_cmd_spans_two) ? ~i_cmd_at_second_cycle : 1'b0;
         assign done_with_ker_word_a = i_cmd_fifo_rd_ack & ~has_leftover;
         always_ff @(posedge clock) begin
@@ -169,13 +170,13 @@ module dla_hld_lsu_write_kernel_downstream #(
         assign done_with_ker_word[1] = 1'h0;
     end
     endgenerate
-    
-    
-    
+
+
+
     /////////////////////
     //  Writeack FIFO  //
     /////////////////////
-    
+
     //accumulate how many kernel words have finished in the current memory word, when the memory word is done write to the fifo and clear the counter
     //writeack_fifo data tracks how many valids can be released to kernel downstream upon receiving writeack
     always_ff @(posedge clock or negedge aclrn) begin
@@ -197,7 +198,7 @@ module dla_hld_lsu_write_kernel_downstream #(
             end
         end
     end
-    
+
     dla_hld_fifo #(
         .WIDTH              (WRITEACK_WIDTH),
         .DEPTH              (M20K_NARROW_FIFO_DEPTH),
@@ -205,7 +206,8 @@ module dla_hld_lsu_write_kernel_downstream #(
         .ALMOST_FULL_CUTOFF (3), //1 clock from almost full to cmd fifo read, 1 clock to done_with_mem_word, 1 clock to writeack_fifo_wr_req
         .ASYNC_RESET        (ASYNC_RESET),
         .SYNCHRONIZE_RESET  (0),
-        .STYLE              ("ms")
+        .STYLE              ("ms"),
+        .DEVICE_FAMILY      (DEVICE_FAMILY)
     )
     writeack_fifo_inst
     (
@@ -222,17 +224,17 @@ module dla_hld_lsu_write_kernel_downstream #(
         .o_empty            (writeack_fifo_empty),
         .ecc_err_status     ()
     );
-    
-    
-    
+
+
+
     //////////////////////////////////////////////
     // Writeack burst to memory word conversion //
     //////////////////////////////////////////////
-    
+
     // AXI provides one writeack for the entire burst, translate that to how many memory words can be released downstream.
     // For Avalon, already had to translate how many kernel words can be released per memory word.
     // Once AXI has translated burst to memory words, will also need to reuse the Avalon translation of memory words to kernel words.
-    
+
     generate
     if (ENABLE_BURST_COALESCE && USE_AXI) begin : GEN_BURST_TO_MEM_WORD
         //upon receiving a writeack for the entire burst, pop from the fifo below to determine how many memory words this burst contained (this information was originally provided by the burst coalescer)
@@ -249,7 +251,8 @@ module dla_hld_lsu_write_kernel_downstream #(
             .NEVER_OVERFLOWS    (1),
             .ASYNC_RESET        (ASYNC_RESET),
             .SYNCHRONIZE_RESET  (0),
-            .STYLE              ("ms")
+            .STYLE              ("ms"),
+            .DEVICE_FAMILY      (DEVICE_FAMILY)
         )
         burst_to_mem_word_fifo_inst
         (
@@ -277,7 +280,7 @@ module dla_hld_lsu_write_kernel_downstream #(
         //if a burst has been writeack, then decrease the counter by that the burst size
         //if a word within that burst has been processed, then increase the counter by 1
         //since a writeack happens before processing of words within that burst, the value of burst_to_mem_word_neg_counter is 0 or negative
-        
+
         //the value of burst_to_mem_word_neg_counter is 0 or negative
         //a negative value means there are some outstanding memory words that have been popped from the burst_to_mem_word_fifo_inst fifo but not yet accepted by the second translator
         //the second translator does memory words to kernel words, it can only receive one memory word per clock cycle because it needs to pop from a different fifo
@@ -296,13 +299,13 @@ module dla_hld_lsu_write_kernel_downstream #(
         assign writeack_fifo_rd_ack = i_avm_writeack;
     end
     endgenerate
-    
-    
-    
+
+
+
     /////////////////////////
     //  Kernel Downstream  //
     /////////////////////////
-    
+
     //accumulate the data read from writeack_fifo into writeack_count
     always_ff @(posedge clock) begin
         writeack_count_incr <= (writeack_fifo_rd_ack) ? writeack_fifo_rd_data : '0; //transfer to writeack_count
@@ -315,12 +318,12 @@ module dla_hld_lsu_write_kernel_downstream #(
             if (~sclrn) writeack_count <= '0;
         end
     end
-    
+
     //use lookahead logic to determine when writeack_count is nonzero, if so then we can transfer a value of 1 from writeack_count into mini_writeack_count
     //the purpose of using mini_writeack_count is that the bit width is much smaller
     //need to integrate predicate logic with counter being nonzero in order to transfer to output_count, it is too much combinational logic when using a large bit with counter
     assign writeack_count_decr = (writeack_count_was_two_or_more | writeack_count[0]) & ~mini_writeack_almost_full;
-    
+
     always_ff @(posedge clock) begin
         mini_writeack_incr <= writeack_count_decr;  //transfer to mini_writeack_count
     end
@@ -335,21 +338,21 @@ module dla_hld_lsu_write_kernel_downstream #(
     always_ff @(posedge clock) begin
         mini_writeack_almost_full <= ~mini_writeack_count[3] & mini_writeack_count[2];    //detect +4 or more, count can be up to 5 by the time almost full asserts
     end
-    
+
     //transfer from mini_writeack_count to output_count if there is space available, next transaction to kernel downstream is not predicated, and mini_writeack_count has stuff
     assign mini_writeack_decr = ~output_count_almost_full & ~i_predicate_fifo_empty & ~i_predicate_fifo_rd_data & writeack_count_nonzero;
-    
+
     //drain the predicate fifo into output_count, which tracks how many valids can be released to kernel downstream
     //only need to check if mini_writeack_count has stuff if the next transaction to kernel downstream is not predicated
     assign o_predicate_fifo_rd_ack = ~output_count_almost_full & ~i_predicate_fifo_empty & (i_predicate_fifo_rd_data | writeack_count_nonzero);
-    
+
     always_ff @(posedge clock) begin
         output_count_incr <= o_predicate_fifo_rd_ack;     //transfer to output_count
     end
     assign output_count_decr = (not_empty & ~i_stall);  //transaction accepted by kernel downstream
-    
+
     //output count is not implemented with a counter, only care about being empty (~o_valid) or almost full (backpressure) or almost empty (for stall latency), each of which can be implemented with an occ tracker
-    
+
     dla_acl_tessellated_incr_decr_threshold #(
         .CAPACITY                   (MLAB_FIFO_DEPTH),
         .THRESHOLD                  (1),
@@ -368,7 +371,7 @@ module dla_hld_lsu_write_kernel_downstream #(
         .decr_raw                   (output_count_decr),
         .threshold_reached          (not_empty)
     );
-    
+
     dla_acl_tessellated_incr_decr_threshold #(
         .CAPACITY                   (MLAB_FIFO_DEPTH),
         .THRESHOLD                  (MLAB_FIFO_DEPTH-1),
@@ -387,10 +390,10 @@ module dla_hld_lsu_write_kernel_downstream #(
         .decr_raw                   (output_count_decr),
         .threshold_reached          (output_count_almost_full)
     );
-    
+
     assign o_empty = ~not_empty;
     assign o_valid = (KER_DOWN_STALL_LATENCY) ? output_count_decr : not_empty;
-    
+
     generate
     if (KER_DOWN_STALL_LATENCY) begin
         logic not_almost_empty;
@@ -418,7 +421,7 @@ module dla_hld_lsu_write_kernel_downstream #(
         assign o_almost_empty = 1'b1;
     end
     endgenerate
-    
+
 endmodule
 
 `default_nettype wire

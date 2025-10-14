@@ -38,13 +38,17 @@ module dla_hld_fifo_zero_width #(
     parameter bit USE_STALL_LATENCY_DOWNSTREAM = 0,
     parameter string RAM_BLOCK_TYPE = "AUTO",
     parameter string STYLE = "hs",
-    // Enable error correction coding. This module doesn't really have storage, so it doesn't 
+    // Enable error correction coding. This module doesn't really have storage, so it doesn't
     // really need ecc, but to avoid the coverage tests to flag it, ecc param and port is added.
-    parameter enable_ecc = "FALSE"
+    parameter enable_ecc = "FALSE",
+    parameter bit SIM_ONLY_DEBUG_ENABLE_ALL = 1,                               //helper to turn on all debug features
+    parameter bit SIM_ONLY_DEBUG_TRACK_STATS = SIM_ONLY_DEBUG_ENABLE_ALL,      //set to 1 to enable tracking of total writes, total reads, occupancy (write used words), and max occupancy
+    parameter bit SIM_ONLY_DEBUG_ERROR_ON_X_INPUT = SIM_ONLY_DEBUG_ENABLE_ALL, //set to 1 to cause simulation to error if i_valid or i_stall is x or z, not allowed once reset has been deasserted
+    parameter bit SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW = SIM_ONLY_DEBUG_ENABLE_ALL //set to 1 to cause simulation to error if overflow happens, which can only happen if NEVER_OVERFLOWS=1
 )
 (
-    input  wire                 clock,          
-    input  wire                 resetn, 
+    input  wire                 clock,
+    input  wire                 resetn,
     input  wire                 i_valid,
     output logic                o_stall,
     output logic                o_almost_full,
@@ -54,7 +58,7 @@ module dla_hld_fifo_zero_width #(
     output logic                o_empty,
     output logic          [1:0] ecc_err_status  // ecc status signals
 );
-    
+
     // for simulation testbench only, these are properties of the fifo which are consumed by the testbench
     // synthesis translate_off
     logic fifo_in_reset;
@@ -68,7 +72,7 @@ module dla_hld_fifo_zero_width #(
     assign MAX_CLOCKS_TO_ENTER_SAFE_STATE = dla_hld_fifo_inst.MAX_CLOCKS_TO_ENTER_SAFE_STATE;
     assign MAX_CLOCKS_TO_EXIT_SAFE_STATE = dla_hld_fifo_inst.MAX_CLOCKS_TO_EXIT_SAFE_STATE;
     // synthesis translate_on
-    
+
     dla_hld_fifo
     #(
         .WIDTH                          (0),
@@ -90,7 +94,11 @@ module dla_hld_fifo_zero_width #(
         .USE_STALL_LATENCY_DOWNSTREAM   (USE_STALL_LATENCY_DOWNSTREAM),
         .RAM_BLOCK_TYPE                 (RAM_BLOCK_TYPE),
         .STYLE                          (STYLE),
-        .enable_ecc                     (enable_ecc)
+        .enable_ecc                     (enable_ecc),
+        .SIM_ONLY_DEBUG_ENABLE_ALL        (SIM_ONLY_DEBUG_ENABLE_ALL),
+        .SIM_ONLY_DEBUG_TRACK_STATS       (SIM_ONLY_DEBUG_TRACK_STATS),
+        .SIM_ONLY_DEBUG_ERROR_ON_X_INPUT  (SIM_ONLY_DEBUG_ERROR_ON_X_INPUT),
+        .SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW (SIM_ONLY_DEBUG_ERROR_ON_OVERFLOW)
     )
     dla_hld_fifo_inst
     (
@@ -107,7 +115,7 @@ module dla_hld_fifo_zero_width #(
         .o_empty                        (o_empty),
         .ecc_err_status                 (ecc_err_status)
     );
-    
+
 endmodule
 
 `default_nettype wire

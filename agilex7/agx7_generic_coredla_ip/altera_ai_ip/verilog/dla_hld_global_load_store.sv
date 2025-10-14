@@ -106,7 +106,9 @@ import dla_hld_lsu_pkg::*;
 
     //throughput features
     parameter bit HIGH_THROUGHPUT_MODE,         //0 = use N clock cycles to process a kernel word that spans N memory words, 1 = use minimum amount of time to process kernel words, only matters if N >= 2
-    parameter int CACHE_SIZE_BYTES              //0 = no cache, otherwise this specifies the cache size in bytes which must be a power of 2, this can only be used with the read LSU
+    parameter int CACHE_SIZE_BYTES,             //0 = no cache, otherwise this specifies the cache size in bytes which must be a power of 2, this can only be used with the read LSU
+
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
 ) (
     input  wire                             clock,
     input  wire                             resetn,
@@ -384,7 +386,8 @@ import dla_hld_lsu_pkg::*;
         .TOTAL_OCC_LIMIT                (TOTAL_OCC_LIMIT),
         .WRITEACK_WIDTH                 (WRITEACK_WIDTH),
         .BURST_COAL_MAX_TIMEOUT_BIT     (BURST_COAL_MAX_TIMEOUT_BIT),
-        .WORD_COAL_MAX_TIMEOUT_BIT      (WORD_COAL_MAX_TIMEOUT_BIT)
+        .WORD_COAL_MAX_TIMEOUT_BIT      (WORD_COAL_MAX_TIMEOUT_BIT),
+        .DEVICE_FAMILY                  (DEVICE_FAMILY)
     )
     dla_hld_lsu_inst
     (
@@ -716,7 +719,8 @@ import dla_hld_lsu_pkg::*;
             .BYPASS_LSU_DATA_FIFO           (1),    //by having to mux between hit and miss, readdata is now stallable, don't need avm_rd_data_fifo
             .PIPELINE_UPDATE_TO_CACHE       (1),    //add a pipeline stage before updating the cache, allows more time for routing between rsp fifo and cache
             .PIPELINE_READ_FROM_CACHE       (1),    //add a pipeline stage after reading from the cache, allows more time for routing from cache to order fifo, hit fifo, and burst coalescer
-            .USE_AXI                        (USE_AXI)
+            .USE_AXI                        (USE_AXI),
+            .DEVICE_FAMILY                  (DEVICE_FAMILY)
         )
         dla_hld_lsu_read_cache
         (
@@ -811,7 +815,8 @@ import dla_hld_lsu_pkg::*;
                 .NEVER_OVERFLOWS    (1),
                 .ASYNC_RESET        (ASYNC_RESET),
                 .SYNCHRONIZE_RESET  (0),
-                .STYLE              ("ms")
+                .STYLE              ("ms"),
+                .DEVICE_FAMILY      (DEVICE_FAMILY)
             )
             addr_adapt_fifo
             (

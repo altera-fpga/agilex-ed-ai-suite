@@ -1,51 +1,26 @@
-`pragma protect begin_protected
-`pragma protect version=1
-`pragma protect author="Intel Corporation"
-`pragma protect encrypt_agent="Quartus Prime Pro Software"
-`pragma protect encrypt_agent_info="17.1"
+// Copyright 2024 Altera Corporation.
+//
+// This software and the related documents are Altera copyrighted materials,
+// and your use of them is governed by the express license under which they
+// were provided to you ("License"). Unless the License provides otherwise,
+// you may not use, modify, copy, publish, distribute, disclose or transmit
+// this software or the related documents without Altera's prior written
+// permission.
+//
+// This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
 
-`pragma protect key_keyowner="Intel Corporation"
-`pragma protect key_method="rsa"
-`pragma protect key_keyname="Intel-FPGA-Quartus-RSA-1"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 256)
-`pragma protect key_block
-3S8BbY7oNe5o9M4MSJ/WeeRd/tAg33T1iDT1oqfeUebQjXrS/1L0KRxRLyTb6cXp79h9RRde3yRo
-PQU4bGPRYuBDY8bV2RgYNeGcXrY8MMIxLT4SyBWCuwX1jM158UYP5mNmGb6qxUj++Tj5TCOSAEY0
-N8pjVN6Uyj7Vhw2aQ/UVkxM0GG68D4wZf/Ar/6Aq5duMCsT770wy4q2qgdW2ATxwSlOxcQ0T76Fv
-VrdTdSFkz8e2+Alb3FfR0D3uTWSCk6oDsGmyg9mOyHpUk7Gf4qUwBowywYxHyVkRPiw6OS8yAwAn
-IYM6N6kyKd3pxXxJ9yZoRkx2ByfJ0O5MfR4g7A==
-
-`pragma protect data_method="aes128-cbc"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 1664)
-`pragma protect data_block
-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
-LkT7hKW6WCs1cPo=
-`pragma protect end_protected
+/*
+  This is the shared datatype between C++ compiler config generation and input feeder writer mux module
+  Config layout for mux before input feeder
+  fpga/input_feeder/rtl/dla_stream_buffer_writer_input_mux.sv
+*/
+typedef struct packed {
+  // TODO, ideally should just be like uint30 for num words minus two, uint1 for read_from_xbar, uint1 for quantize
+  uint32_t num_words_minus_two;     // number of input data (-2)
+  uint8_t  read_from_xbar;          // whether input data comes from xbar
+  uint8_t  quantize;                // whether to pass data through FakeBFP
+  uint8_t  is_feature_2x_precision; // is this convolution using a 2x precision "bootstrap" for features?
+  uint8_t  read_from_stream;        // whether to read from stream
+} input_feeder_writer_mux_config_t;

@@ -109,7 +109,7 @@ package dma_pkg;
     localparam SRC_ADDR_W = (HOST_ADDR_W > DDR_ADDR_W) ? HOST_ADDR_W : DDR_ADDR_W; //choose the larger address width so we support both directions
     localparam DEST_ADDR_W = SRC_ADDR_W;
     localparam LENGTH_W = 20;
-    localparam AXI_MM_DATA_W = 512;
+    localparam AXI_MM_DATA_W = local_mem_cfg_pkg::LOCAL_MEM_DATA_WIDTH;
     localparam AXI_LEN_W = 8; // n6001: 8; d5005: 5
     localparam AXI_MM_DATA_W_BYTES = AXI_MM_DATA_W / 8;
     localparam DDR_DATA_W = AXI_MM_DATA_W;

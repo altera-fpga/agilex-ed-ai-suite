@@ -26,7 +26,7 @@
 module dla_top
 
 import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_array_pkg::*, dla_top_pkg::*, dla_xbar_pkg::*, dla_aux_activation_pkg::*, dla_aux_pool_pkg::*,
-  dla_aux_softmax_pkg::*, dla_aux_depthwise_pkg::*, dla_lt_pkg::*;
+  dla_aux_softmax_pkg::*, dla_aux_depthwise_pkg::*, dla_lt_pkg::*, dla_filter_bias_scale_scratchpad_pkg::*;
 
 #(
   string DEVICE,                    // the device to target, legal values are "A10", "C10", "S10", or "AGX7"
@@ -206,9 +206,17 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
   int LAYOUT_TRANSFORM_MAX_DILATION_HEIGHT,
   int LAYOUT_TRANSFORM_MAX_DILATION_DEPTH,
   int LAYOUT_TRANSFORM_READER_BYTES,
-  bit LAYOUT_TRANSFORM_DO_U8_CONV,
+  int LAYOUT_TRANSFORM_CONV_MODE,
   bit LAYOUT_TRANSFORM_ENABLE_IN_BIAS_SCALE,
 
+  // Lightweight (non-folding) layout transform
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_CHANNELS,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_BUS_WIDTH,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_ELEMENT_WIDTH,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_PIXEL_FIFO_DEPTH,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_CONV_MODE,
+  int LIGHTWEIGHT_LAYOUT_TRANSFORM_BIAS_SCALE_ENABLE,
   // output streaming enable and signals
   bit ENABLE_OUTPUT_STREAMER,
   int AXI_OSTREAM_DATA_WIDTH,
@@ -505,6 +513,7 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
       .TDEST_WIDTH(0),
       .TUSER_WIDTH(0),
       .LT_ARCH(LT_ARCH),
+      .LW_LT_ARCH(LW_LT_ARCH),
       .OUTPUT_WIDTH(INPUT_FEEDER_LANE_DATA_WIDTH)
     ) dla_input_streamer_inst (
       .clk_dla(clk_dla),
@@ -559,7 +568,7 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     assign lt_param_error = 0;
   end
 
-  if (LAYOUT_TRANSFORM_ENABLE & ~ENABLE_INPUT_STREAMING) begin
+  if ((LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE | LAYOUT_TRANSFORM_ENABLE) & ~ENABLE_INPUT_STREAMING) begin
     if (~CONFIG_NETWORK_CROSS_CLOCK[CONFIG_ID_LAYOUT_TRANSFORM]) begin
       $fatal(1, "Compiling layout transform design without DDR clock-crossing enabled.");
     end
@@ -570,7 +579,7 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
 
     assign config_lt_valid_stream = 1'b0;
     assign config_lt_data_stream = 'x;
-  end else if (LAYOUT_TRANSFORM_ENABLE & ENABLE_INPUT_STREAMING) begin
+  end else if ((LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE | LAYOUT_TRANSFORM_ENABLE) & ENABLE_INPUT_STREAMING) begin
     if (~CONFIG_NETWORK_CROSS_CLOCK_AXI[CONFIG_ID_LAYOUT_TRANSFORM]) begin
       $fatal(1, "Compiling layout transform streaming design without AXI clock-crossing enabled.");
     end
@@ -587,9 +596,32 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     assign config_lt_data_stream = 'x;
   end
 
+  /*
+    Interfaces for passing online configuration data from DMA to the PE Array System
+  */
+  scratchpad_write_data_if #(SCRATCHPAD_ARCH)       csr_scratchpad_update_data_if();
+  localparam SCRATCHPAD_ADDR_PARAM = dla_filter_bias_scale_scratchpad_pkg::scratchpad_param_from_scratchpad_arch(SCRATCHPAD_ARCH);
+  scratchpad_write_addr_if #(SCRATCHPAD_ADDR_PARAM) csr_scratchpad_update_addr_if();
+  logic                                             csr_scratchpad_update_en;
+  scratchpad_update_if #(.ADDR_WIDTH(SCRATCHPAD_MEM_ADDR_WIDTH),
+                         .MEM_ID_WIDTH(SCRATCHPAD_MEM_ID_WIDTH),
+                         .DATA_WIDTH(SCRATCHPAD_MEM_DATA_WIDTH))
+                         csr_scratchpad_update_if();
+
+  assign csr_scratchpad_update_data_if.data.is_filter = csr_scratchpad_update_if.data.is_filter;
+  assign csr_scratchpad_update_data_if.data.data      = csr_scratchpad_update_if.data.data;
+  assign csr_scratchpad_update_addr_if.data.mem_id    = csr_scratchpad_update_if.data.mem_id;
+  assign csr_scratchpad_update_addr_if.data.mem_addr  = csr_scratchpad_update_if.data.addr;
+
+  configuration_update_if #(
+    .ADDR_WIDTH                     ($clog2(CONFIG_CACHE_DEPTH)),
+    .DATA_WIDTH                     (CONFIG_READER_WIDTH)
+  ) csr_config_update_if ();
+
   dla_dma #(
     .CSR_ADDR_WIDTH                 (CSR_ADDR_WIDTH),
     .CSR_DATA_BYTES                 (CSR_DATA_BYTES),
+    .CONFIG_ADDR_WIDTH              ($clog2(CONFIG_CACHE_DEPTH)),
     .CONFIG_DATA_BYTES              (CONFIG_DATA_BYTES),
     .CONFIG_READER_DATA_BYTES       (CONFIG_READER_DATA_BYTES),
     .FILTER_READER_DATA_BYTES       (FILTER_READER_DATA_BYTES),
@@ -601,9 +633,13 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .DDR_READ_ID_WIDTH              (DDR_READ_ID_WIDTH),
     .DEVICE                         (DEVICE_ENUM),
     .LT_ARCH                        (LT_ARCH),
+    .LW_LT_ARCH                     (LW_LT_ARCH),
     .ENABLE_INPUT_STREAMING         (ENABLE_INPUT_STREAMING),
     .ENABLE_OUTPUT_STREAMING        (ENABLE_OUTPUT_STREAMER),
-    .ENABLE_ON_CHIP_PARAMETERS      (ENABLE_ON_CHIP_PARAMETERS)
+    .ENABLE_ON_CHIP_PARAMETERS      (ENABLE_ON_CHIP_PARAMETERS),
+    .SCRATCHPAD_MEM_ADDR_WIDTH      (SCRATCHPAD_MEM_ADDR_WIDTH),
+    .SCRATCHPAD_MEM_ID_WIDTH        (SCRATCHPAD_MEM_ID_WIDTH),
+    .SCRATCHPAD_DATA_WIDTH          (SCRATCHPAD_MEM_DATA_WIDTH)
   )
   dma
   (
@@ -662,6 +698,9 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .i_debug_network_rvalid         (debug_network_csr_rvalid),
     .i_debug_network_rdata          (debug_network_csr_rdata),
     .o_debug_network_rready         (debug_network_csr_rready),
+    .o_scratchpad_update_if         (csr_scratchpad_update_if),
+    .o_scratchpad_write_en          (csr_scratchpad_update_en),
+    .o_config_update_if             (csr_config_update_if),
     .o_ddr_arvalid                  (o_ddr_arvalid),
     .o_ddr_araddr                   (o_ddr_araddr),
     .o_ddr_arlen                    (o_ddr_arlen),
@@ -751,6 +790,10 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .o_filter_ready              (filter_reader_ready),
     .i_filter_valid              (filter_reader_valid),
 
+    .i_csr_scratchpad_update_data (csr_scratchpad_update_data_if),
+    .i_csr_scratchpad_update_addr (csr_scratchpad_update_addr_if),
+    .i_csr_scratchpad_update_en   (csr_scratchpad_update_en),
+
     .i_xbar_writeback_input_data (aux_data),
     .o_xbar_writeback_input_ready(aux_ready),
     .i_xbar_writeback_input_valid(aux_valid),
@@ -762,7 +805,7 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .o_pc_input_feeder_to_sequencer_valid (pc_input_feeder_to_sequencer_valid),
     .o_pc_input_feeder_to_sequencer_ready (pc_input_feeder_to_sequencer_ready),
 
-    .o_first_word_received      (streaming_first_word_received)
+    .o_first_streaming_word_received      (streaming_first_word_received)
   );
 
   logic [MAX_XBAR_INTERFACE_PAIRS-1:0]            din_to_xbar_valid;
@@ -885,7 +928,8 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
       PER_GROUP_CONTROL         : 0,
       DEBUG_LEVEL               : 0,
       DEBUG_ID                  : 0,
-      DEBUG_EVENT_DEPTH         : 0};
+      DEBUG_EVENT_DEPTH         : 0,
+      DEVICE_FAMILY             : DEVICE_ENUM};
 
     localparam dla_aux_activation_pkg::aux_special_params_t   AUX_ACTIVATION_SPECIAL_PARAMS  = '{ // Parameterization special to this aux blocks
       ENABLE_ACTIVATIONS : ACTIVATION_TYPE,
@@ -1054,7 +1098,8 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
       PER_GROUP_CONTROL         : 0,
       DEBUG_LEVEL               : 0,
       DEBUG_ID                  : 0,
-      DEBUG_EVENT_DEPTH         : 0};
+      DEBUG_EVENT_DEPTH         : 0,
+      DEVICE_FAMILY             : DEVICE_ENUM};
 
     // config data
     logic [AUX_POOL_CONFIG_STREAM_PARAMS.DATA_WIDTH-1:0] config_stream;
@@ -1220,7 +1265,8 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
       PER_GROUP_CONTROL         : 0,
       DEBUG_LEVEL               : 0,
       DEBUG_ID                  : 0,
-      DEBUG_EVENT_DEPTH         : 0};
+      DEBUG_EVENT_DEPTH         : 0,
+      DEVICE_FAMILY             : DEVICE_ENUM};
 
     // config data
     logic [AUX_DEPTHWISE_CONFIG_STREAM_PARAMS.DATA_WIDTH-1:0] config_stream;
@@ -1361,7 +1407,8 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
       PER_GROUP_CONTROL         : 0,
       DEBUG_LEVEL               : 0,
       DEBUG_ID                  : 0,
-      DEBUG_EVENT_DEPTH         : 0};
+      DEBUG_EVENT_DEPTH         : 0,
+      DEVICE_FAMILY             : DEVICE_ENUM};
 
     // config data
     logic [AUX_SOFTMAX_CONFIG_STREAM_PARAMS.DATA_WIDTH-1:0] config_stream;
@@ -1506,7 +1553,8 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .GROUP_NUM         ( XBAR_WA_GROUP_NUM            ),
     .GROUP_DELAY       ( XBAR_WA_GROUP_DELAY          ),
     .WIDTH_IN_ELEMENTS ( AUX_OUTPUT_DATA_WIDTHS[0]/16 ),
-    .ELEMENT_WIDTH     ( 16                           )
+    .ELEMENT_WIDTH     ( 16                           ),
+    .DEVICE_FAMILY     ( DEVICE_ENUM                  )
   ) u_degroup_xbar (
     .clk       ( clk_dla                      ),
     .i_sresetn ( w_dla_sresetn                ),
@@ -1700,6 +1748,7 @@ import dla_common_pkg::*, dla_input_feeder_pkg::input_feeder_arch_t, dla_pe_arra
     .i_valid_ddr                    (config_network_input_valid),
     .o_ready                        (config_network_input_ready),  // config network is ready to receive config data
     .i_data_ddr                     (config_network_input_data),
+    .i_config_update                (csr_config_update_if),
     .o_valid                        (config_network_output_valid),
     .i_ready                        (config_network_output_ready), // module is ready to receive config data from config network
     .o_data                         (config_network_output_data)

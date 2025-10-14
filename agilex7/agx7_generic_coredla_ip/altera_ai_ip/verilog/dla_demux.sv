@@ -126,10 +126,10 @@ module dla_demux import dla_common_pkg::*, dla_demux_pkg::*; #(
       .i_resetn    (sclrn[0]              ),
       .o_ready     (o_ready               ),
       .i_valid     (i_valid               ),
-      .i_data      (i_data                ),
+      .i_data      ({>>{i_data}}          ),
       .i_ready     (i_ready_comb          ),
       .o_valid     (intermediate_out_valid),
-      .o_data      (o_data                )
+      .o_data      ({>>{o_data}}          )
     );
 
 endmodule

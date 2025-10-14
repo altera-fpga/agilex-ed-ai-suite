@@ -1,65 +1,76 @@
-`pragma protect begin_protected
-`pragma protect version=1
-`pragma protect author="Intel Corporation"
-`pragma protect encrypt_agent="Quartus Prime Pro Software"
-`pragma protect encrypt_agent_info="17.1"
+// Copyright 2024 Altera Corporation.
+//
+// This software and the related documents are Altera copyrighted materials,
+// and your use of them is governed by the express license under which they
+// were provided to you ("License"). Unless the License provides otherwise,
+// you may not use, modify, copy, publish, distribute, disclose or transmit
+// this software or the related documents without Altera's prior written
+// permission.
+//
+// This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
 
-`pragma protect key_keyowner="Intel Corporation"
-`pragma protect key_method="rsa"
-`pragma protect key_keyname="Intel-FPGA-Quartus-RSA-1"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 256)
-`pragma protect key_block
-yhw+cKaDTee5KI4cTRnqqjAI0ewsj1Yjhvicqv/q2sXwdj4QhN7oNWA/0XLZdM+mhjldJeNp3vaI
-WBnHC6/YvpDEj9MuBsITJUoTewV0c+x9hInMmDBNqzRMOh4Bne55+ycJRFl1w0Uzyv6AHKTnfUJC
-g9/q5W/KMvaIsJBlnXkjB/6DsoFx8VWOmMMiVJzju+rxqupnYoSbr46z/AZEsBXc41cpsTC/uHPc
-ottTzLVPpnU2YlXy835Wlx5m+hAnhUBXTMmVhxWUjiaUdrpTJ0DxyoqiAJME2vtZW7V+ciWJsEJT
-YUIsdfe0y/bj+OxrejazKE3MB0AUDtCPywGipQ==
+// This config MUST have the same feilds - both order and size - as the struct
+// defined in fpga/layout_transform/dual_inc/dla_layout_transform_config.h
+//
+// Any changes here should be reflected there!
+//
+// This config is used to configure the layout transform hardware at runtime.
 
-`pragma protect data_method="aes128-cbc"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 2480)
-`pragma protect data_block
-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
-Wto3MycB9Ph4pmuR9nf6z/LVshTgficsps46Ydg=
-`pragma protect end_protected
+typedef struct packed {
+  uint16_t input_height;
+  uint16_t input_width;
+  uint16_t input_depth;
+  uint16_t stride_height;
+  uint16_t stride_width;
+  uint16_t stride_depth;
+  uint16_t out_pad;
+  uint16_t left_pad;
+  uint16_t high_pad;
+  uint16_t output_w;
+  uint16_t output_h;
+  uint16_t output_d;
+  uint16_t output_channels;
+  uint16_t input_channels;
+  uint32_t feature_volume;
+  uint16_t stride_volume;
+  uint16_t channels_incr;
+  uint16_t depth_incr;
+  uint16_t stride_depth_incr;
+  uint16_t stride_height_incr;
+  uint16_t output_volume;
+  uint16_t output_face_area;
+  uint16_t h_overflow;
+  uint16_t w_overflow;
+  uint16_t w_padding_per_stride;
+  uint16_t h_padding_per_stride;
+  uint16_t c_step;
+  uint16_t w_step;
+  uint16_t h_step;
+  uint16_t d_step;
+  uint16_t w_stride_step;
+  uint16_t h_stride_step;
+  uint16_t w_inner_step;
+  uint16_t h_inner_step;
+  int16_t top_full_padding;
+  int16_t left_full_padding;
+
+  uint16_t effective_fw;
+  uint16_t effective_fh;
+  uint16_t stride_w_limit;
+  uint16_t stride_h_limit;
+  uint16_t final_stride_w_limit;
+  uint16_t final_stride_h_limit;
+
+  uint16_t w_end_overhang;
+
+  uint16_t continue_count_cond;
+  uint16_t w_nstrides;
+  uint16_t h_nstrides;
+
+  lt_bias_scale_loop bias_float;
+  lt_bias_scale_loop scale_float;
+
+  uint16_t _padding_;
+} layout_transform_config_t;

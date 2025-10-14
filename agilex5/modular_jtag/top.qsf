@@ -79,8 +79,5 @@ source dla_platform.qsf
 # SDC file
 set_global_assignment -name SDC_FILE top.out.sdc
 
-# seed
-set_global_assignment -name SEED 0
-
 # High effort
 set_global_assignment -name OPTIMIZATION_MODE "High Performance With Aggressive Power Effort"

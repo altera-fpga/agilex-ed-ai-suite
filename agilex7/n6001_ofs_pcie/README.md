@@ -12,20 +12,21 @@ SmartNIC N6001-PL connected to a host via PCIe. The example design uses the
 ## Requirements
 
 > [!NOTE]
-> All OFS-based AI Suite example designs use an
-> [Out-of-Tree PR FIM](https://ofs.github.io/ofs-2024.3-1/hw/n6001/dev_guides/fim_dev/ug_dev_fim_ofs_n6001/#223-out-of-tree-pr-fim).
+> This OFS-based AI Suite example design uses an
+> [Out-of-Tree PR FIM](https://ofs.github.io/ofs-2025.1-1/hw/n6001/dev_guides/fim_dev/ug_dev_fim_ofs_n6001/#223-out-of-tree-pr-fim).
 >
 > Please refer to
-> [[OFS-PCIE] Getting Started with Open FPGA Stack (OFS) for PCIe Attach Design Examples](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-1/getting-started-with-for-attach-design.html)
-> in the [Design Examples User Guide](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-1/design-examples-user-guide.html)
+> [[OFS-PCIE] Getting Started with Open FPGA Stack (OFS) for PCIe Attach Design Examples](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/getting-started-with-for-attach-design.html)
+> in the [Design Examples User Guide](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/design-examples-user-guide.html)
 > for more details.
+> The above documentation specifies additional OFS installation and configuration steps for OPAE and DFL
 
-* AI Suite 2025.1
-* Quartus Prime 24.3
+* AI Suite 2025.3
+* Quartus Prime 25.1
     * Agilex 7 device support
     * Agilex common files
 * OpenVINO 2024.6.0 Runtime
-* [OFS 2024.3-1 N6001 Slim FIM](https://github.com/OFS/ofs-agx7-pcie-attach/releases/download/ofs-2024.3-1/n6001-slimfim-images_ofs-2024-3-1.tar.gz)
+* [OFS 2025.1-1 N6001 Slim FIM](https://github.com/OFS/ofs-agx7-pcie-attach/releases/download/ofs-2025.1-1/n6001-slimfim-images_ofs-2025-1-1.tar.gz)
 * [OPAE 2.13.0-2 Driver](https://github.com/OFS/opae-sdk/releases/tag/2.13.0-2)
 
 ## Compiling (Optional)
@@ -39,13 +40,13 @@ Compile the Quartus project with
 ```bash
 # Enable the OpenVINO and the AI Suite environments
 source /opt/intel/openvino_2024.6.0/setupvars.sh
-source /opt/altera/fpga_ai_suite_2025.1/dla/setupvars.sh
+source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
 
 # If OPAE has been installed into the default location, use:
 export OPAE_SDK_ROOT=/usr
 
 # Prepare the OFS setup
-export OPAE_PLATFORM_ROOT="$HOME/OFS/n6001-slimfim-images_ofs-2024-3-1/pr_build_template"
+export OPAE_PLATFORM_ROOT="$HOME/OFS/n6001-slimfim-images_ofs-2025-1-1/pr_build_template"
 
 # Prepare and compile the Quartus project.
 cd $EXAMPLES_PATH/agilex7/n6001_ofs_pcie
@@ -62,7 +63,7 @@ The `dla_afu.gbs` bitstream file will be located in the
 
 > [!NOTE]
 > This is a condensed version of the
-> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/quick-start-tutorial.html).
+> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/quick-start-tutorial.html).
 > If you're using a pre-compiled bitstream then replace any paths to
 > `dla_afu.gbs` with the location where you saved
 > `agx7_n6001_ofs_pcie.gbs`.
@@ -104,7 +105,7 @@ omz_converter --name resnet-50-tf --download_dir ../models --output_dir ../model
 >
 > ```shell
 > source /opt/intel/openvino_2024.6.0/setupvars.sh
-> source /opt/altera/fpga_ai_suite_2025.1/dla/setupvars.sh
+> source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
 > ```
 
 We will now run inference with this model.  It is located in

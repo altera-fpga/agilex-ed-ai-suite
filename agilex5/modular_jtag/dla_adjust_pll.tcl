@@ -195,8 +195,7 @@ proc adjust_iopll_frequency_in_postfit_netlist { design_name \
   # linqiaol hack: hardcode speedgrade to 3, because the somehow the legality solver does not support speedgrade 5 or 6
   # gui_fractional_cout sets x
   # m, n, and k (fractional count values) are omitted
-  set arg_list [list -prot_mode "BASIC" \
-                     -using_adv_mode false \
+  set arg_list [list -using_adv_mode false \
                      -family $device_family \
                      -speedgrade 3 \
                      -compensation_mode direct \
@@ -208,6 +207,7 @@ proc adjust_iopll_frequency_in_postfit_netlist { design_name \
                      -validated_counter_settings [array get desired_output] \
                      -prot_mode                    BASIC]
 
+  post_message "Calling ::quartus::pll::legality::get_physical_parameters_for_generation with $arg_list"
   set error [catch {::quartus::pll::legality::get_physical_parameters_for_generation $arg_list} result]
 
   if {$error} {
@@ -249,10 +249,6 @@ proc adjust_iopll_frequency_in_postfit_netlist { design_name \
   # VCO frequency
   set vco_freq [format "%0*b" 36  [expr { int([round_to_atom_precision $result_array(vco_freq)] * 1000000) }]]
 
-  # PFD frequency
-  set pfd_freq [expr {$refclk_mhz / ($n_hi_div + $n_lo_div)}]
-  set pfd_freq [format "%0*b" 36  [expr { int($pfd_freq * 1000000) }]]
-
   # C counter settings
   array set c_array $result_array(c)
 
@@ -279,6 +275,15 @@ proc adjust_iopll_frequency_in_postfit_netlist { design_name \
   post_message "c0_bypass: $c0_bypass"
   post_message "c0_duty_tweak: $c0_duty_tweak"
 
+  # PFD frequency
+  set pfd_freq [format "%0*b" 36  [expr { int($refclk_mhz * 1000000) }]]
+  set n_div 1
+  if {!$n_bypass} {
+    set pfd_freq [expr {$refclk_mhz / ($n_hi_div + $n_lo_div)}]
+    set pfd_freq [format "%0*b" 36  [expr { int($pfd_freq * 1000000) }]]
+    set n_div    [expr {$n_lo_div + $n_hi_div}]
+  }
+
   # Apply the new settings:
       # Modify by pxx
   if {$device_family == "Agilex 5" } {
@@ -302,7 +307,7 @@ proc adjust_iopll_frequency_in_postfit_netlist { design_name \
       set_atom_node_info -key OUT_CLK_1_C_DIV -node $node [expr {$c1_lo_div + $c1_hi_div}]
       set_atom_node_info -key VCO_CLK_FREQ -node $node $vco_freq
       set_atom_node_info -key PFD_CLK_FREQ -node $node $pfd_freq
-      set_atom_node_info -key REF_CLK_N_DIV -node $node [expr {$n_lo_div + $n_hi_div}]
+      set_atom_node_info -key REF_CLK_N_DIV -node $node $n_div
       set_atom_node_info -key FB_CLK_M_DIV -node $node [expr {$m_lo_div + $m_hi_div}]
 
       post_message "New OUT_CLK_0_FREQ: [get_atom_node_info -key OUT_CLK_0_FREQ -node $node]"
@@ -685,6 +690,8 @@ while {$setup_timing_violation == 1 && $iteration <= 5} {
   set success [adjust_iopll_frequency_in_postfit_netlist $revision_name $kernel_pll_name $device_family $speedgrade $actual_kernel_clk]
   if {$success == "TCL_OK"} {
     post_message "IOPLL settings adjusted successfully for current revision"
+  } else {
+    error "IOPLL settings adjustment failed!"
   }
   write_atom_netlist -file abc
   post_message "Updated atom cdb"

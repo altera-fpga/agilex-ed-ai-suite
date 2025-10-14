@@ -46,13 +46,15 @@
 module dla_dma_csr #(
     parameter int CSR_ADDR_WIDTH,           //width of the byte address signal, determines CSR address space size, e.g. 11 bit address = 2048 bytes, the largest size that uses only 1 M20K
     parameter int CSR_DATA_BYTES,           //width of the CSR data path, typically 4 bytes
+    parameter int CONFIG_ADDR_WIDTH,        //width of the config reader RAM address
     parameter int CONFIG_DATA_BYTES,        //data width of the config network output port, typically 4 bytes, the descriptor queue matches this so that config decode can be reused
     parameter int CONFIG_READER_DATA_BYTES, //data width of the config network input port, needed by config reader address generator for loop update
 
     parameter int ENABLE_INPUT_STREAMING,
     parameter int ENABLE_OUTPUT_STREAMING,
-    parameter int ENABLE_ON_CHIP_PARAMETERS
+    parameter int ENABLE_ON_CHIP_PARAMETERS,
 
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
     ) (
     input  wire                             clk_ddr,
     input  wire                             clk_pcie,
@@ -112,17 +114,27 @@ module dla_dma_csr #(
     output logic                            o_csr_bvalid,
     input  wire                             i_csr_bready,
 
+    output logic                            o_scratchpad_write_enable,
+    input  wire                             i_scratchpad_write_ready,
+
+    input  wire                             i_config_update_write_ready,
+
     //reset request for the whole ip, runs on ddr clock
     output logic                            o_request_ip_reset,
 
     output logic                            o_core_streaming_active,
 
     //output bit to start/stop streaming interface
-    output logic                            o_streaming_active
+    output logic                            o_streaming_active,
+
+    //FBS online configuration interface
+    scratchpad_update_if.sender         o_scratchpad_update,
+    //Configuration update interface
+    configuration_update_if.sender      o_configuration_update
 );
 
 
-    /////////////////////////////////
+    //////////////////////////////////
     //  Parameter legality checks  //
     /////////////////////////////////
 
@@ -155,7 +167,8 @@ module dla_dma_csr #(
         STATE_READ_DATA_BIT,
         STATE_WRITE_COMMIT_BIT,
         STATE_DESCRIPTOR_BIT,
-        STATE_AWAIT_RESET_BIT
+        STATE_AWAIT_RESET_BIT,
+        STATE_UPDATE_SCRATCHPAD_CONF_BIT
     } index;
 
     enum logic [index.num()-1:0] {
@@ -168,13 +181,12 @@ module dla_dma_csr #(
         STATE_WRITE_COMMIT  = 1 << STATE_WRITE_COMMIT_BIT,
         STATE_DESCRIPTOR    = 1 << STATE_DESCRIPTOR_BIT,
         STATE_AWAIT_RESET   = 1 << STATE_AWAIT_RESET_BIT,
+        STATE_UPDATE_SCRATCHPAD_CONF = 1 << STATE_UPDATE_SCRATCHPAD_CONF_BIT,
         XXX = 'x
     } state;
 
     localparam int MAX_JOBS_ACTIVE   = 64;  //upper bounded by how many descriptors the queue can hold
     localparam int JOBS_ACTIVE_WIDTH = $clog2(MAX_JOBS_ACTIVE+1);
-
-
 
     ///////////////
     //  Signals  //
@@ -225,6 +237,12 @@ module dla_dma_csr #(
     logic                           write_to_debug_network_addr, read_from_debug_network_valid, read_from_debug_network_data;
     logic                           read_from_license_flag;
     logic                           read_from_ip_reset, write_to_ip_reset;
+
+
+    logic write_to_fbs_conf_update_control;
+    logic write_to_fbs_conf_update_data;
+    logic [4:0] write_to_fbs_data_sub_address;
+    logic [32*8*CSR_DATA_BYTES-1:0] fbs_conf_update_data_concat;
 
     //clock crosser for interrupt
     logic                           ddr_interrupt_level;
@@ -338,7 +356,8 @@ module dla_dma_csr #(
         .ALMOST_FULL_CUTOFF         (DESCRIPTOR_QUEUE_ALMOST_FULL_CUTOFF),
         .ASYNC_RESET                (0),    //consume reset synchronously
         .SYNCHRONIZE_RESET          (0),    //reset is already synchronized
-        .STYLE                      ("ms")
+        .STYLE                      ("ms"),
+        .DEVICE_FAMILY              (DEVICE_FAMILY)
     )
     descriptor_queue
     (
@@ -478,7 +497,6 @@ module dla_dma_csr #(
         .o_counter_high_bits_latch  (number_of_input_filter_reads_hi)
     );
 
-
     //////////////////////
     //  Address decode  //
     //////////////////////
@@ -519,6 +537,10 @@ module dla_dma_csr #(
         read_from_output_feature_writes_lo <= (ram_rd_addr == DLA_DMA_CSR_OFFSET_OUTPUT_FEATURE_WRITE_COUNT_LO/4);
         read_from_output_feature_writes_hi <= (ram_rd_addr == DLA_DMA_CSR_OFFSET_OUTPUT_FEATURE_WRITE_COUNT_HI/4);
         read_ready_streaming_interface <= (ram_rd_addr == DLA_CSR_OFFSET_READY_STREAMING_IFACE/4);
+        write_to_fbs_conf_update_control <= (ram_wr_addr == DLA_DMA_CSR_OFFSET_FBS_CONF_UPDATE_CONTROL/4);
+        write_to_fbs_conf_update_data <= (ram_wr_addr >= DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_0/4 &&
+                              ram_wr_addr <= DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_31/4);
+        write_to_fbs_data_sub_address <= (ram_wr_addr - DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_0/4);
 
         //decode specific addresses in which an action must be taken
         enqueue_descriptor <= (ram_wr_addr == DLA_DMA_CSR_OFFSET_INPUT_OUTPUT_BASE_ADDR/4);
@@ -546,6 +568,8 @@ module dla_dma_csr #(
         debug_network_rready  <= 1'b0;
         o_request_ip_reset    <= 1'b0;
         o_streaming_active <= o_streaming_active;
+        o_scratchpad_write_enable <= 1'b0;
+        o_configuration_update.valid <= 1'b0;
 
         unique case (1'b1)
         state[STATE_GET_READY_BIT]: begin
@@ -592,7 +616,10 @@ module dla_dma_csr #(
           if (pending_write_address && pending_write_data) begin
             // This previous_was_write check ensures fairness when servicing simultaneous / queued requests
             if (!previous_was_write || !pending_read) begin
-              state <= STATE_WRITE_COMMIT;
+              // Look ahead at the address decode to determine if we should transition to online configuration update
+              state <= (ram_wr_addr == DLA_DMA_CSR_OFFSET_FBS_CONF_UPDATE_CONTROL/4) ?
+                STATE_UPDATE_SCRATCHPAD_CONF :
+                STATE_WRITE_COMMIT;
               previous_was_write <= 1'b1;
               o_csr_arready <= 1'b0;
               o_csr_wready  <= 1'b0;
@@ -607,7 +634,29 @@ module dla_dma_csr #(
             end
           end
         end
-
+        state[STATE_UPDATE_SCRATCHPAD_CONF_BIT]: begin
+            if (ram_wr_data[31]) begin // if bit 31 is set, then this is an update for the scratchpad
+                o_scratchpad_write_enable <= 1'b1;
+                o_scratchpad_update.data.addr <= ram_wr_data[15:0];
+                o_scratchpad_update.data.mem_id <= ram_wr_data[21:16];
+                o_scratchpad_update.data.is_filter <= ~ram_wr_data[30];
+                o_scratchpad_update.data.data <= fbs_conf_update_data_concat;
+                // Wait for the update data to enter the FIFO and the transaction to happen
+                if (i_scratchpad_write_ready && o_scratchpad_write_enable) begin
+                    state <= STATE_WRITE_COMMIT;
+                    o_scratchpad_write_enable <= 1'b0;
+                end
+            end
+            else begin // if bit 31 is not set, then this is an update for the config memory
+                o_configuration_update.valid <= 1'b1;
+                o_configuration_update.data.addr <= ram_wr_data[CONFIG_ADDR_WIDTH-1:0];
+                o_configuration_update.data.data <= fbs_conf_update_data_concat[8*CONFIG_READER_DATA_BYTES-1:0];
+                if (i_config_update_write_ready && o_configuration_update.valid) begin
+                    state <= STATE_WRITE_COMMIT;
+                    o_configuration_update.valid <= 1'b0;
+                end
+            end
+        end
         state[STATE_READ_ADDR_BIT]: begin
             state <= STATE_READ_INTERNAL;
             ram_rd_addr <= csr_read_addr;
@@ -689,6 +738,13 @@ module dla_dma_csr #(
             end
             if (write_to_ip_reset) begin
               pending_reset <= (ram_wr_data != '0);
+            end
+            if (write_to_fbs_conf_update_data) begin
+              fbs_conf_update_data_concat[write_to_fbs_data_sub_address*32+:32] <= ram_wr_data;
+            end
+            if (write_to_fbs_conf_update_control) begin
+              // We do not need to write to the CSR RAM for online configuration or filter update
+              ram_wr_en <= 1'b0;
             end
             o_csr_bvalid <= 1'b1;
             if (o_csr_bvalid && i_csr_bready) begin

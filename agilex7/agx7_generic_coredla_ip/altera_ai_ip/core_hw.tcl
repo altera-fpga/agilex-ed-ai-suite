@@ -79,28 +79,32 @@ set_parameter_property  $param  VISIBLE         true
 set_parameter_property  $param  DERIVED         true
 add_display_item "CSR Parameters" $param  parameter
 
-
 # DDR Parameters
+
+# get the default values of DDR params from the arch file annotated 
+# in default_param_values.tcl as ARCH_<param> variables
+source ./verilog/[lindex $existing_arch 0]/default_param_values.tcl
+
 add_display_item "" "DDR Parameters" GROUP tab
 
 set param C_DDR_AXI_ADDR_WIDTH
-add_parameter           $param  INTEGER         0
+add_parameter           $param  INTEGER         $ARCH_C_DDR_AXI_ADDR_WIDTH
 set_parameter_property  $param  DISPLAY_NAME    "Address Width"
 set_parameter_property  $param  DISPLAY_UNITS   "bits"
+set_parameter_property  $param  ALLOWED_RANGES  {1:32}
 set_parameter_property  $param  HDL_PARAMETER   true
 set_parameter_property  $param  DESCRIPTION     "AXI4 Address Width."
 set_parameter_property  $param  VISIBLE         true
-set_parameter_property  $param  DERIVED         true
 add_display_item "DDR Parameters" $param  parameter
 
 set param C_DDR_AXI_DATA_WIDTH
-add_parameter           $param  INTEGER         0
+add_parameter           $param  INTEGER         $ARCH_C_DDR_AXI_DATA_WIDTH
 set_parameter_property  $param  DISPLAY_NAME    "Data Width"
 set_parameter_property  $param  DISPLAY_UNITS   "bits"
+set_parameter_property  $param  ALLOWED_RANGES  {8 16 64 128 256 512 1024}
 set_parameter_property  $param  HDL_PARAMETER   true
 set_parameter_property  $param  DESCRIPTION     "AXI4 Data Width."
 set_parameter_property  $param  VISIBLE         true
-set_parameter_property  $param  DERIVED         true
 add_display_item "DDR Parameters" $param  parameter
 
 set param C_DDR_AXI_BURST_WIDTH
@@ -115,14 +119,55 @@ set_parameter_property  $param  DERIVED         true
 add_display_item "DDR Parameters" $param  parameter
 
 set param C_DDR_AXI_THREAD_ID_WIDTH
-add_parameter           $param  INTEGER         0
+add_parameter           $param  INTEGER         $ARCH_C_DDR_AXI_THREAD_ID_WIDTH
 set_parameter_property  $param  DISPLAY_NAME    "ID"
 set_parameter_property  $param  DISPLAY_UNITS   "bits"
 set_parameter_property  $param  HDL_PARAMETER   true
 set_parameter_property  $param  DESCRIPTION     "AXI4 ID Width."
 set_parameter_property  $param  VISIBLE         true
-set_parameter_property  $param  DERIVED         true
 add_display_item "DDR Parameters" $param  parameter
+
+
+# Streaming Parameters
+
+add_display_item "" "Streaming Parameters" GROUP tab
+
+set param STREAMING_INPUT_ENABLED
+add_parameter $param Integer 0                  "AXI Input Streaming Enabled"
+set_parameter_property $param DISPLAY_NAME      "Input Streaming Enabled"
+set_parameter_property $param DISPLAY_HINT      boolean
+set_parameter_property $param DERIVED           true
+set_parameter_property $param HDL_PARAMETER     false
+set_parameter_property $param GROUP "Streaming Parameters"
+
+set param AXI_ISTREAM_DATA_WIDTH
+add_parameter           $param  INTEGER         128
+set_parameter_property  $param  DISPLAY_NAME    "Input Streaming Width"
+set_parameter_property  $param  DISPLAY_UNITS   "bits"
+set_parameter_property  $param  HDL_PARAMETER   true
+set_parameter_property  $param  DESCRIPTION     "AXI Input Streaming Data Width."
+set_parameter_property  $param  VISIBLE         true
+set_parameter_property  $param  DERIVED         true
+add_display_item "Streaming Parameters" $param  parameter
+
+set param STREAMING_OUTPUT_ENABLED
+add_parameter $param Integer 0                  "AXI Output Streaming Enabled"
+set_parameter_property $param DISPLAY_NAME      "Output Streaming Enabled"
+set_parameter_property $param DISPLAY_HINT      boolean
+set_parameter_property $param DERIVED           true
+set_parameter_property $param HDL_PARAMETER     false
+set_parameter_property $param GROUP "Streaming Parameters"
+
+set param AXI_OSTREAM_DATA_WIDTH
+add_parameter           $param  INTEGER         128
+set_parameter_property  $param  DISPLAY_NAME    "Output Streaming Width"
+set_parameter_property  $param  DISPLAY_UNITS   "bits"
+set_parameter_property  $param  HDL_PARAMETER   true
+set_parameter_property  $param  DESCRIPTION     "AXI Output Streaming Data Width."
+set_parameter_property  $param  VISIBLE         true
+set_parameter_property  $param  DERIVED         true
+add_display_item "Streaming Parameters" $param  parameter
+
 
 # DLA Parameters
 # todo: either enable this or remove it before release
@@ -140,21 +185,46 @@ add_display_item "DLA Parameters" $param  parameter
 
 omni_add_capability 949 1 2048 0 0
 
+add_validation_callback check_ddr_params
 add_elab_callback my_elab
 add_validation_callback check_family
 # check if an INI is set to display capability tab
 add_validation_callback check_ocs_ini
 
-proc my_elab {} {
+proc check_ddr_params {} {
+  set architecture [get_parameter_value ARCH_OPTION]
+  # ToDo: check for a mismatch with .arch file values before issuing the warning
+  send_message WARNING "If any DDR Parameters were modified using the Platform Designer Parameter Editor, they may now be out of sync with the values in the .arch file ($architecture)."
+  
+  set supported_ddr_axi_id_width 2 
+  set axi_id_width [get_parameter_value C_DDR_AXI_THREAD_ID_WIDTH]
+  if { $axi_id_width ne $supported_ddr_axi_id_width  } {
+    send_message ERROR "Currently the IP only supports a Burst Width of $supported_ddr_axi_id_width bits"
+  }
+}
 
+proc my_elab {} {
   set architecture [get_parameter_value ARCH_OPTION]
   source ./verilog/$architecture/interface_param.tcl
 
-  dla_add_axi4lite_slave_interface  csr_axi       ddr_clk     dla_resetn
-  dla_add_axi4_master_interface     ddr_axi       ddr_clk     dla_resetn
+  dla_add_axi4lite_slave_interface        csr_axi       ddr_clk     dla_resetn
+  dla_add_axi4_master_interface           ddr_axi       ddr_clk     dla_resetn
+  
+  set streaming_input_enabled [get_parameter_value STREAMING_INPUT_ENABLED]
+  set streaming_output_enabled [get_parameter_value STREAMING_OUTPUT_ENABLED]
 
+  if { $streaming_input_enabled || $streaming_output_enabled } {
+    add_clk axi_clk
+  }
+  
+  if { $streaming_input_enabled } {
+    dla_add_axi4streaming_slave_interface axi_istream axi_clk dla_resetn
+  }
+  
+  if { $streaming_output_enabled } {
+    dla_add_axi4streaming_master_interface axi_ostream axi_clk dla_resetn
+  }
   omni_add_interrupt_port           irq_level     irq_clk     csr_axi output
-
 }
 
 # return the family string used by quartus

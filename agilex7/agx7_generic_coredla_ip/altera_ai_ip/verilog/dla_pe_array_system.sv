@@ -64,6 +64,11 @@ module dla_pe_array_system import dla_common_pkg::*; #(
   output logic                          o_filter_ready,
   input  wire                           i_filter_valid,
 
+  // Filter update interface from CSR, used for FBS online configuration
+  scratchpad_write_data_if.receiver     i_csr_scratchpad_update_data,
+  scratchpad_write_addr_if.receiver     i_csr_scratchpad_update_addr,
+  input wire                            i_csr_scratchpad_update_en,
+
   // Feature data from output of aux kernels
   input  wire [INPUT_FEEDER_INPUT_DATA_WIDTH-1:0] i_xbar_writeback_input_data,
   output wire                                     o_xbar_writeback_input_ready,
@@ -78,7 +83,7 @@ module dla_pe_array_system import dla_common_pkg::*; #(
   output logic o_pc_input_feeder_to_sequencer_valid,
   output logic o_pc_input_feeder_to_sequencer_ready,
 
-  output wire  o_first_word_received
+  output wire  o_first_streaming_word_received
 );
 
   // input feeder output signals
@@ -100,11 +105,13 @@ module dla_pe_array_system import dla_common_pkg::*; #(
   pe_array_control_if#(control_param) pe_array_control();
   pe_array_result_if#(result_param)   pe_array_result();
 
-  // filter scratchpad interfaces
+  // filter scratchpad write interfaces, external memory case
   logic                                       scratchpad_write_enable;
-  logic                                       scratchpad_read;
   scratchpad_write_addr_if#(scratchpad_param) scratchpad_write_addr();
   scratchpad_write_data_if#(SCRATCHPAD_ARCH)  scratchpad_filter_data();
+
+  // filter scratchpad read interfaces
+  logic                                       scratchpad_read;
   scratchpad_read_addr_if#(scratchpad_param)  scratchpad_read_addr();
   scratchpad_read_data_if#(SCRATCHPAD_ARCH)   scratchpad_read_data();
 
@@ -203,29 +210,46 @@ module dla_pe_array_system import dla_common_pkg::*; #(
     .o_input_feeder_control     (input_feeder_control),
     .o_input_feeder_data        (input_feeder_data),
 
-    .o_first_word_received      (o_first_word_received)
+    .o_first_streaming_word_received      (o_first_streaming_word_received)
   );
 
 
-  dla_filter_ddr_unpack #(
-    .SCRATCHPAD_ARCH(SCRATCHPAD_ARCH),
-    .DDR_WIDTH(FILTER_READER_WIDTH)
-  ) filter_ddr_unpack (
-    .i_ddr_data              (i_filter_data),
-    .o_scratchpad_filter_data(scratchpad_filter_data)
-  );
+  if (SCRATCHPAD_ARCH.ENABLE_DDRFREE_FBS) begin: gen_ddr_free_fbs_scratchpad
+    dla_filter_bias_scale_scratchpad #(SCRATCHPAD_ARCH) scratchpad (
+        .clk           (clk),
+        .i_aresetn     (i_aresetn),
 
-  dla_filter_bias_scale_scratchpad #(SCRATCHPAD_ARCH) scratchpad (
-    .clk           (clk),
+        .i_write_enable(i_csr_scratchpad_update_en),
+        .i_write_addr  (i_csr_scratchpad_update_addr),
+        .i_write_data  (i_csr_scratchpad_update_data),
 
-    .i_write_enable(scratchpad_write_enable),
-    .i_write_addr  (scratchpad_write_addr),
-    .i_write_data  (scratchpad_filter_data),
+        .i_read        (scratchpad_read),
+        .i_read_addr   (scratchpad_read_addr),
+        .o_read_data   (scratchpad_read_data)
+    );
+  end
+  else begin: gen_ddr_fbs_scratchpad
+    dla_filter_ddr_unpack #(
+      .SCRATCHPAD_ARCH(SCRATCHPAD_ARCH),
+      .DDR_WIDTH(FILTER_READER_WIDTH)
+      ) filter_ddr_unpack (
+      .i_ddr_data              (i_filter_data),
+      .o_scratchpad_filter_data(scratchpad_filter_data)
+      );
 
-    .i_read        (scratchpad_read),
-    .i_read_addr   (scratchpad_read_addr),
-    .o_read_data   (scratchpad_read_data)
-  );
+    dla_filter_bias_scale_scratchpad #(SCRATCHPAD_ARCH) scratchpad (
+      .clk           (clk),
+      .i_aresetn     (i_aresetn),
+
+      .i_write_enable(scratchpad_write_enable),
+      .i_write_addr  (scratchpad_write_addr),
+      .i_write_data  (scratchpad_filter_data),
+
+      .i_read        (scratchpad_read),
+      .i_read_addr   (scratchpad_read_addr),
+      .o_read_data   (scratchpad_read_data)
+      );
+  end
 
   for (genvar lane_idx = 0; lane_idx < PE_ARRAY_ARCH.NUM_LANES; lane_idx++) begin : GEN_LANE_ASSIGN
     // TODO: [shaneoco] move this calculation to a central place

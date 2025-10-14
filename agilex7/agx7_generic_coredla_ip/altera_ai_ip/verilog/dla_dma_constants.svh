@@ -1,101 +1,107 @@
-`pragma protect begin_protected
-`pragma protect version=1
-`pragma protect author="Intel Corporation"
-`pragma protect encrypt_agent="Quartus Prime Pro Software"
-`pragma protect encrypt_agent_info="17.1"
+// Copyright 2020 Altera Corporation.
+//
+// This software and the related documents are Altera copyrighted materials,
+// and your use of them is governed by the express license under which they
+// were provided to you ("License"). Unless the License provides otherwise,
+// you may not use, modify, copy, publish, distribute, disclose or transmit
+// this software or the related documents without Altera's prior written
+// permission.
+//
+// This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
 
-`pragma protect key_keyowner="Intel Corporation"
-`pragma protect key_method="rsa"
-`pragma protect key_keyname="Intel-FPGA-Quartus-RSA-1"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 256)
-`pragma protect key_block
-zf4IOQ3d92vrQRXWmuxA4mpOebsNgCjss3cSZUlZ2qs4qH9Q3lNVKBfLYciw0VI4z+iT6tKhuJ+N
-WFnHhRU1RyV97t/5gAvykKPer5vQXzh/o3Ym5JhX8R387lxaqIUec/0PXXgPebWyEDzU1a8OyMj+
-/0355jhKpRSsPedQDhF7tGozJY2BcdT607P90aDwBkg8HHJekj36Tt6gwxdnFFS2YVWqVy5+wM9B
-ZlXUYJ80GdYRQYsvW1YkKvy784710c4wJNxW76+5pIhMrpiwDM9IpUtG4Zy91oSzH3EU28t0oGUn
-LEcibrdL819XVabW/kM7z1WXVfyF5CWkG6NR2Q==
+// This is a header file for specifying DMA constants that need to be consistent between
+// hardware and software.
+//
+// WARNING: DO NOT CHANGE THE SYNTAX OF THIS FILE
+//
+// The syntax is meant to work natively for hardware, and in software "localparam" is replaced
+// by "constexpr". It is simpler to avoid hexadecimal numbers because the prefix syntax is
+// different, hardware uses "32'h" where software uses 0x.
 
-`pragma protect data_method="aes128-cbc"
-`pragma protect encoding=(enctype = "base64", line_length = 76, bytes = 4512)
-`pragma protect data_block
-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
-bqIS+aFa3czn
-`pragma protect end_protected
+
+
+///////////////////
+//  DLA DMA CSR  //
+///////////////////
+
+//the numbers below are byte addresses, must be a multiple of 4 since each access is 32 bits
+localparam int DLA_DMA_CSR_OFFSET_INTERRUPT_CONTROL             = 512; //0x200
+localparam int DLA_DMA_CSR_OFFSET_INTERRUPT_MASK                = 516;
+localparam int DLA_DMA_CSR_OFFSET_CONFIG_BASE_ADDR              = 528; //0x210
+localparam int DLA_DMA_CSR_OFFSET_CONFIG_RANGE_MINUS_TWO        = 532;
+localparam int DLA_DMA_CSR_OFFSET_INPUT_OUTPUT_BASE_ADDR        = 536;
+localparam int DLA_DMA_CSR_OFFSET_DESC_DIAGNOSTICS              = 540;
+localparam int DLA_DMA_CSR_OFFSET_INTERMEDIATE_BASE_ADDR        = 544; //0x220
+localparam int DLA_DMA_CSR_OFFSET_COMPLETION_COUNT              = 548;
+localparam int DLA_DMA_CSR_OFFSET_IP_RESET                      = 552;
+localparam int DLA_CSR_OFFSET_READY_STREAMING_IFACE             = 556; //0x22c
+
+localparam int DLA_DMA_CSR_OFFSET_CLOCKS_ACTIVE_LO              = 576; //0x240
+localparam int DLA_DMA_CSR_OFFSET_CLOCKS_ACTIVE_HI              = 580;
+localparam int DLA_DMA_CSR_OFFSET_CLOCKS_ALL_JOBS_LO            = 584;
+localparam int DLA_DMA_CSR_OFFSET_CLOCKS_ALL_JOBS_HI            = 588;
+localparam int DLA_DMA_CSR_OFFSET_DEBUG_NETWORK_ADDR            = 592; //0x250
+localparam int DLA_DMA_CSR_OFFSET_DEBUG_NETWORK_VALID           = 596;
+localparam int DLA_DMA_CSR_OFFSET_DEBUG_NETWORK_DATA            = 600;
+localparam int DLA_DMA_CSR_OFFSET_LICENSE_FLAG                  = 608; //0x260
+localparam int DLA_DMA_CSR_OFFSET_INPUT_FEATURE_READ_COUNT_LO   = 612;
+localparam int DLA_DMA_CSR_OFFSET_INPUT_FEATURE_READ_COUNT_HI   = 616;
+localparam int DLA_DMA_CSR_OFFSET_INPUT_FILTER_READ_COUNT_LO    = 620;
+localparam int DLA_DMA_CSR_OFFSET_INPUT_FILTER_READ_COUNT_HI    = 624;
+localparam int DLA_DMA_CSR_OFFSET_OUTPUT_FEATURE_WRITE_COUNT_LO = 628;
+localparam int DLA_DMA_CSR_OFFSET_OUTPUT_FEATURE_WRITE_COUNT_HI = 632;
+localparam int DLA_DMA_CSR_OFFSET_CORE_CLOCKS_ACTIVE_LO         = 636; // 0x27c
+localparam int DLA_DMA_CSR_OFFSET_CORE_CLOCKS_ACTIVE_HI         = 640; // 0x280
+localparam int DLA_DMA_CSR_OFFSET_START_CORE_STREAMING          = 644; // 0x284
+
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_0             = 768; // 0x300
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_1             = 772; // 0x304
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_2             = 776; // 0x308
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_3             = 780; // 0x30C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_4             = 784; // 0x310
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_5             = 788; // 0x314
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_6             = 792; // 0x318
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_7             = 796; // 0x31C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_8             = 800; // 0x320
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_9             = 804; // 0x324
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_10            = 808; // 0x328
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_11            = 812; // 0x32C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_12            = 816; // 0x330
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_13            = 820; // 0x334
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_14            = 824; // 0x338
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_15            = 828; // 0x33C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_16            = 832; // 0x340
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_17            = 836; // 0x344
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_18            = 840; // 0x348
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_19            = 844; // 0x34C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_20            = 848; // 0x350
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_21            = 852; // 0x354
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_22            = 856; // 0x358
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_23            = 860; // 0x35C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_24            = 864; // 0x360
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_25            = 868; // 0x364
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_26            = 872; // 0x368
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_27            = 876; // 0x36C
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_28            = 880; // 0x370
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_29            = 884; // 0x374
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_30            = 888; // 0x378
+localparam int DLA_DMA_CSR_OFFSET_FBS_FILTER_DATA_31            = 892; // 0x37C
+localparam int DLA_DMA_CSR_OFFSET_FBS_CONF_UPDATE_CONTROL       = 896; // 0x380
+
+//bit positions in interrupt control and mask
+localparam int DLA_DMA_CSR_INTERRUPT_ERROR_BIT = 0;
+localparam int DLA_DMA_CSR_INTERRUPT_DONE_BIT  = 1;
+
+//bit positions in descriptor diagnostic
+localparam int DLA_DMA_CSR_DESC_DIAGNOSTICS_OVERFLOW_BIT    = 0;
+localparam int DLA_DMA_CSR_DESC_DIAGNOSTICS_ALMOST_FULL_BIT = 1;
+localparam int DLA_DMA_CSR_DESC_DIAGNOSTICS_OUT_OF_INFERENCES_BIT = 2;
+
+//descriptor queue
+//runtime knows how many jobs it has enqueued and how many jobs have finished
+//runtime is responsible for not overflowing the descriptor queue, it must limit the number of outstanding jobs queued in hardware
+localparam int DLA_DMA_CSR_DESCRIPTOR_QUEUE_LOGICAL_SIZE  = 64;   //max number of jobs that runtime can enqueue
+localparam int DLA_DMA_CSR_DESCRIPTOR_QUEUE_WORDS_PER_JOB = 8;    //how many words in the queue are needed to enqueue 1 job
+localparam int DLA_DMA_CSR_DESCRIPTOR_QUEUE_PHYSICAL_SIZE = DLA_DMA_CSR_DESCRIPTOR_QUEUE_LOGICAL_SIZE * DLA_DMA_CSR_DESCRIPTOR_QUEUE_WORDS_PER_JOB; //number of words in the hardware queue

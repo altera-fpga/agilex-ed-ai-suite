@@ -110,8 +110,10 @@ module dla_acl_mid_speed_fifo #(
     parameter bit HOLD_DATA_OUT_WHEN_EMPTY = 0, // 0 means data_out can be x when fifo is empty, 1 means data_out will hold last value when fifo is empty (scfifo behavior, has fmax penalty)
     parameter bit WRITE_AND_READ_DURING_FULL = 0,//set to 1 to allow writing and reading while the fifo is full, this may have an fmax penalty, to compensate it is recommended to use this with NEVER_OVERFLOWS = 1
 
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY,
+
     //error correction code
-    parameter enable_ecc = "FALSE"              // NOT IMPLEMENTED YET, see case:555783
+    parameter enable_ecc = "FALSE"             // NOT IMPLEMENTED YET, see case:555783
 )
 (
     input  wire                 clock,
@@ -157,6 +159,7 @@ module dla_acl_mid_speed_fifo #(
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(VALID_IN_EARLINESS >= 0 && VALID_IN_EARLINESS <= 10, $sformatf("dla_acl_mid_speed_fifo: illegal value of VALID_IN_EARLINESS = %d, minimum allowed is 0, maximum allowed is 10\n", VALID_IN_EARLINESS))
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(VALID_IN_OUTSIDE_REGS >= 0 && VALID_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_high_speed_fifo: illegal value of VALID_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", VALID_IN_OUTSIDE_REGS))
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(STALL_IN_OUTSIDE_REGS >= 0 && STALL_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_high_speed_fifo: illegal value of STALL_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", STALL_IN_OUTSIDE_REGS))
+        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(DEVICE_FAMILY < dla_common_pkg::DEVICE_UNKNOWN , $sformatf("dla_acl_high_speed_fifo: illegal value of DEVICE_FAMILY = %d\n", DEVICE_FAMILY))
     endgenerate
 
 
@@ -441,7 +444,7 @@ module dla_acl_mid_speed_fifo #(
             altera_syncram #(   //modelsim library: altera_lnsim
                 .numwords_a (2**ADDR),
                 .numwords_b (2**ADDR),
-                .address_aclr_b ((ASYNC_RESET) ? "CLEAR1" : "NONE"),
+                .address_aclr_b ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? "CLEAR1" : "NONE"),
                 .address_reg_b ("CLOCK1"),
                 .clock_enable_input_a ("BYPASS"),
                 .clock_enable_input_b ("BYPASS"),
@@ -467,7 +470,7 @@ module dla_acl_mid_speed_fifo #(
                 //clock and reset
                 .clock0         (clock),
                 .clock1         (clock),
-                .aclr1          ((ASYNC_RESET) ? ~aclrn : 1'b0),    //this is used to reset the internal address_b when ASYNC_RESET=1
+                .aclr1          ((ASYNC_RESET) ? ~aclrn : ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? ~sclrn : 1'b0)),    //this is used to reset the internal address_b when ASYNC_RESET=1
 
                 //write port
                 .wren_a         (ram_wr_en),
@@ -587,8 +590,8 @@ module dla_acl_mid_speed_fifo #(
     // Note the update of the read address itself is based on EARLY_VALID whereas the decision to read is based on EARLY_STALL, so we have to convert earliness settings.
     generate
     if (EARLY_STALL == 0) begin : read_incr0    //EARLY_VALID == EARLY_STALL
-        assign ram_rd_addr_incr_EV     = (!USE_MLAB && !ASYNC_RESET) ? (feed_prefetch_ES | ~sclrn_late) : feed_prefetch_ES;
-        assign m20k_addr_b_clock_en_EV = (!USE_MLAB && !ASYNC_RESET) ? (feed_prefetch_ES | ~sclrn)      : feed_prefetch_ES;
+        assign ram_rd_addr_incr_EV     = (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? (feed_prefetch_ES | ~sclrn_late) : feed_prefetch_ES;
+        assign m20k_addr_b_clock_en_EV = (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? (feed_prefetch_ES | ~sclrn)      : feed_prefetch_ES;
     end
     if (EARLY_STALL >= 1) begin : read_incr12   //EARLY_VALID == EARLY_STALL-1, one pipeline stage needed for EV to consume from ES
         always_ff @(posedge clock or negedge aclrn) begin
@@ -599,7 +602,7 @@ module dla_acl_mid_speed_fifo #(
             else begin
                 ram_rd_addr_incr_EV <= feed_prefetch_ES;
                 m20k_addr_b_clock_en_EV <= feed_prefetch_ES;
-                if (!USE_MLAB && !ASYNC_RESET) begin    //special reset behavior for M20K using sync reset, peek one stage ahead on sclr since we are now registering these signals
+                if (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) begin    //special reset behavior for M20K using sync reset, peek one stage ahead on sclr since we are now registering these signals
                     if (~sclrn) ram_rd_addr_incr_EV <= 1'b1;
                     if (~sclrn_early) m20k_addr_b_clock_en_EV <= 1'b1;
                 end
@@ -626,7 +629,7 @@ module dla_acl_mid_speed_fifo #(
         .WIDTH                  (ADDR),
         .ASYNC_RESET            (ASYNC_RESET),
         .SYNCHRONIZE_RESET      (0),
-        .INITIAL_OCCUPANCY      ((!USE_MLAB && ASYNC_RESET) ? 1 : 0)    //for M20K our read address is 1 ahead of the address_b inside the M20K, for async reset we don't clock in our address during reset, so just start 1 ahead
+        .INITIAL_OCCUPANCY      ((!USE_MLAB && DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? 1 : 0)    //for M20K our read address is 1 ahead of the address_b inside the M20K, for async reset we don't clock in our address during reset, so just start 1 ahead
     )
     ram_rd_addr_inst
     (
@@ -653,7 +656,7 @@ module dla_acl_mid_speed_fifo #(
                 m20k_addr_b_clock_en <= m20k_addr_b_clock_en_EV;
                 if (~sclrn && RESET_EVERYTHING) begin
                     ram_rd_addr <= '0;
-                    m20k_addr_b_clock_en <= (!USE_MLAB && !ASYNC_RESET) ? 1'b1 : 1'b0;  //special reset behavior for M20K using sync reset
+                    m20k_addr_b_clock_en <= (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? 1'b1 : 1'b0;  //special reset behavior for M20K using sync reset
                 end
             end
         end

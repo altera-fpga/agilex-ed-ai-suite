@@ -53,7 +53,6 @@ add_fileset_file altera_ai_ip/dla_dot_dsp_pack1x1_mult_fp16.sv SYSTEM_VERILOG PA
 add_fileset_file altera_ai_ip/dla_dot_dsp_pack1x1_mult_fp16_adder_tree.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_dot_dsp_pack1x1_mult_fp16_adder_tree.sv
 add_fileset_file altera_ai_ip/dla_dot_dsp_pack1x1_mult_fp16_chain_add.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_dot_dsp_pack1x1_mult_fp16_chain_add.sv
 add_fileset_file altera_ai_ip/dla_dsp_fp16_mult_sum.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_dsp_fp16_mult_sum.sv
-add_fileset_file altera_ai_ip/dla_s10_adder_tree.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_s10_adder_tree.sv
 add_fileset_file altera_ai_ip/dla_aux_softmax_division_A10.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_softmax_division_A10.sv
 add_fileset_file altera_ai_ip/dla_aux_softmax_division_AGX.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_softmax_division_AGX.sv
 add_fileset_file altera_ai_ip/dla_aux_softmax_division_C10.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_softmax_division_C10.sv
@@ -101,10 +100,15 @@ add_fileset_file altera_ai_ip/dla_dsp_prime_tensor_accumulation.sv SYSTEM_VERILO
 add_fileset_file altera_ai_ip/dla_dsp_prime_tensor_dot_sidefeed.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_dsp_prime_tensor_dot_sidefeed.sv
 add_fileset_file altera_ai_ip/dla_fp32_from_fpx_convert.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_fp32_from_fpx_convert.sv
 add_fileset_file altera_ai_ip/dla_fp32_to_fpx_convert.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_fp32_to_fpx_convert.sv
+add_fileset_file altera_ai_ip/dla_generic_config_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_generic_config_if.sv
+add_fileset_file altera_ai_ip/dla_half_buffer.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_half_buffer.sv
 add_fileset_file altera_ai_ip/dla_hld_lsu_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_hld_lsu_pkg.sv
 add_fileset_file altera_ai_ip/dla_latency_alignment.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_latency_alignment.sv
+add_fileset_file altera_ai_ip/dla_mux.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_mux.sv
 add_fileset_file altera_ai_ip/dla_ram.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_ram.sv
 add_fileset_file altera_ai_ip/dla_shift_taps.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_shift_taps.sv
+add_fileset_file altera_ai_ip/dla_skid_buffer.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_skid_buffer.sv
+add_fileset_file altera_ai_ip/dla_st_pipeline_stage.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_st_pipeline_stage.sv
 add_fileset_file altera_ai_ip/dla_timer.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_timer.sv
 add_fileset_file altera_ai_ip/dla_value_counter.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_value_counter.sv
 add_fileset_file altera_ai_ip/dla_config_data_concat.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_config_data_concat.sv
@@ -113,7 +117,6 @@ add_fileset_file altera_ai_ip/dla_config_network.sv SYSTEM_VERILOG PATH ../alter
 add_fileset_file altera_ai_ip/dla_ddrfree_config_data_read.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_ddrfree_config_data_read.sv
 add_fileset_file altera_ai_ip/dla_debug_network.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_debug_network.sv
 add_fileset_file altera_ai_ip/dla_debug_network_node.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_debug_network_node.sv
-add_fileset_file altera_ai_ip/dla_layout_transform_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_layout_transform_config.sv
 add_fileset_file altera_ai_ip/dla_layout_transform.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_layout_transform.sv
 add_fileset_file altera_ai_ip/dla_lt_data_conversion.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lt_data_conversion.sv
 add_fileset_file altera_ai_ip/dla_lt_dimension_counter.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lt_dimension_counter.sv
@@ -126,6 +129,8 @@ add_fileset_file altera_ai_ip/dla_lt_output_logic.sv SYSTEM_VERILOG PATH ../alte
 add_fileset_file altera_ai_ip/dla_lt_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lt_pkg.sv
 add_fileset_file altera_ai_ip/dla_lt_ram_arb.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lt_ram_arb.sv
 add_fileset_file altera_ai_ip/dla_lt_step_counter.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lt_step_counter.sv
+add_fileset_file altera_ai_ip/dla_lightweight_layout_transform.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lightweight_layout_transform.sv
+add_fileset_file altera_ai_ip/dla_lw_lt_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lw_lt_pkg.sv
 add_fileset_file altera_ai_ip/dla_input_streamer.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_streamer.sv
 add_fileset_file altera_ai_ip/dla_streamer_fsm.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_streamer_fsm.sv
 add_fileset_file altera_ai_ip/dla_output_streamer.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_output_streamer.sv
@@ -185,8 +190,6 @@ add_fileset_file altera_ai_ip/dla_hld_ram_lower_mlab_simple_dual_port.sv SYSTEM_
 add_fileset_file altera_ai_ip/dla_hld_ram_remaining_width.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_hld_ram_remaining_width.sv
 add_fileset_file altera_ai_ip/dla_hld_ram_short_depth_stitch.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_hld_ram_short_depth_stitch.sv
 add_fileset_file altera_ai_ip/dla_hld_ram_tall_depth_stitch.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_hld_ram_tall_depth_stitch.sv
-add_fileset_file altera_ai_ip/dla_input_feeder_reader_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_reader_config.sv
-add_fileset_file altera_ai_ip/dla_input_feeder_writer_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_writer_config.sv
 add_fileset_file altera_ai_ip/dla_input_feeder.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder.sv
 add_fileset_file altera_ai_ip/dla_input_feeder_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_if.sv
 add_fileset_file altera_ai_ip/dla_input_feeder_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_pkg.sv
@@ -268,15 +271,19 @@ add_fileset_file altera_ai_ip/dla_top.sv SYSTEM_VERILOG PATH ../altera_ai_ip/ver
 add_fileset_file altera_ai_ip/dla_top_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_top_pkg.sv
 add_fileset_file altera_ai_ip/dla_width_adapter.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_width_adapter.sv
 add_fileset_file altera_ai_ip/dla_width_adapter_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_width_adapter_pkg.sv
-add_fileset_file altera_ai_ip/dla_st_pipeline_stage.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_st_pipeline_stage.sv
 add_fileset_file altera_ai_ip/dla_xbar.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_xbar.sv
 add_fileset_file altera_ai_ip/dla_xbar_config_handler.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_xbar_config_handler.sv
 add_fileset_file altera_ai_ip/dla_xbar_pkg.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_xbar_pkg.sv
 add_fileset_file altera_ai_ip/dla_xbar_wrapper.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_xbar_wrapper.sv
 add_fileset_file altera_ai_ip/dla_aux_activation_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_activation_if.sv
 add_fileset_file altera_ai_ip/dla_aux_pool_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_pool_if.sv
+add_fileset_file altera_ai_ip/dla_aux_depthwise_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_depthwise_config.sv
 add_fileset_file altera_ai_ip/dla_aux_softmax_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_aux_softmax_if.sv
+add_fileset_file altera_ai_ip/dla_layout_transform_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_layout_transform_config.sv
+add_fileset_file altera_ai_ip/dla_lw_lt_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_lw_lt_config.sv
 add_fileset_file altera_ai_ip/dla_filter_bias_scale_scratchpad_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_filter_bias_scale_scratchpad_if.sv
+add_fileset_file altera_ai_ip/dla_input_feeder_reader_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_reader_config.sv
+add_fileset_file altera_ai_ip/dla_input_feeder_writer_config.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_input_feeder_writer_config.sv
 add_fileset_file altera_ai_ip/dla_interface_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_interface_if.sv
 add_fileset_file altera_ai_ip/dla_pe_array_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_pe_array_if.sv
 add_fileset_file altera_ai_ip/dla_xbar_if.sv SYSTEM_VERILOG PATH ../altera_ai_ip/verilog/dla_xbar_if.sv
@@ -290,6 +297,7 @@ add_fileset_file altera_ai_ip/dla_acl_width_clip.svh SYSTEM_VERILOG_INCLUDE PATH
 add_fileset_file altera_ai_ip/dla_aux_activation_constants.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_aux_activation_constants.svh
 add_fileset_file altera_ai_ip/dla_aux_activation_functions.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_aux_activation_functions.svh
 add_fileset_file altera_ai_ip/dla_vector_dot_arch_info.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_vector_dot_arch_info.svh
+add_fileset_file altera_ai_ip/dla_aux_depthwise_config_vc.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_aux_depthwise_config_vc.svh
 add_fileset_file altera_ai_ip/dla_common_macros.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_common_macros.svh
 add_fileset_file altera_ai_ip/dla_common_types.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_common_types.svh
 add_fileset_file altera_ai_ip/dla_constants.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_constants.svh
@@ -298,6 +306,8 @@ add_fileset_file altera_ai_ip/dla_aux_generic_debug_pkg.svh SYSTEM_VERILOG_INCLU
 add_fileset_file altera_ai_ip/dla_aux_generic_pkg.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_aux_generic_pkg.svh
 add_fileset_file altera_ai_ip/dla_common_enums.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_common_enums.svh
 add_fileset_file altera_ai_ip/dla_layout_transform_config.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_layout_transform_config.svh
+add_fileset_file altera_ai_ip/dla_layout_transform_enums.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_layout_transform_enums.svh
+add_fileset_file altera_ai_ip/dla_lw_lt_config.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_lw_lt_config.svh
 add_fileset_file altera_ai_ip/dla_output_streamer_config.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_output_streamer_config.svh
 add_fileset_file altera_ai_ip/dla_dma_config_feature_reader.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_dma_config_feature_reader.svh
 add_fileset_file altera_ai_ip/dla_dma_config_feature_writer.svh SYSTEM_VERILOG_INCLUDE PATH ../altera_ai_ip/verilog/dla_dma_config_feature_writer.svh

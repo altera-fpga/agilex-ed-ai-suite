@@ -13,6 +13,7 @@
 
 `include "ofs_plat_if.vh"
 `include "dla_dma_param.svh"
+`include "ofs_dla.vh"
 
 //
 // Top level PIM-based module.
@@ -351,7 +352,7 @@ ofs_plat_if_tie_off_unused
   .HOST_CHAN_IN_USE_MASK(1),
 
   // All banks are used
-  .LOCAL_MEM_IN_USE_MASK(-1)
+  .LOCAL_MEM_IN_USE_MASK({MAX_DLA_INSTANCES{1'b1}})
 ) tie_off(plat_ifc);
 
 // =========================================================================
@@ -442,6 +443,7 @@ dla_afu dla_afu_inst (
   .dma_csr_ruser        (mmio64_to_afu_dma.r.user),
 
   // DLA CSR going out
+  `ifdef DLA_ENABLE_GLOBAL_MEM_0
   // DLA IP 0
   // Write channel
   .dla_csr0_awvalid (dla_csr_awvalid[0]),
@@ -463,7 +465,9 @@ dla_afu dla_afu_inst (
   .dla_csr0_rvalid  (dla_csr_rvalid[0]),
   .dla_csr0_rready  (dla_csr_rready[0]),
   .dla_csr0_rdata   (dla_csr_rdata[0]),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_1
   // DLA IP 1
   // Write channel
   .dla_csr1_awvalid (dla_csr_awvalid[1]),
@@ -485,7 +489,9 @@ dla_afu dla_afu_inst (
   .dla_csr1_rvalid  (dla_csr_rvalid[1]),
   .dla_csr1_rready  (dla_csr_rready[1]),
   .dla_csr1_rdata   (dla_csr_rdata[1]),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_2
   // DLA IP 2
   // Write channel
   .dla_csr2_awvalid (dla_csr_awvalid[2]),
@@ -507,7 +513,9 @@ dla_afu dla_afu_inst (
   .dla_csr2_rvalid  (dla_csr_rvalid[2]),
   .dla_csr2_rready  (dla_csr_rready[2]),
   .dla_csr2_rdata   (dla_csr_rdata[2]),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_3
   // DLA IP 3
   // Write channel
   .dla_csr3_awvalid (dla_csr_awvalid[3]),
@@ -529,8 +537,10 @@ dla_afu dla_afu_inst (
   .dla_csr3_rvalid  (dla_csr_rvalid[3]),
   .dla_csr3_rready  (dla_csr_rready[3]),
   .dla_csr3_rdata   (dla_csr_rdata[3]),
+  `endif
 
   // DLA to DDR banks in
+  `ifdef DLA_ENABLE_GLOBAL_MEM_0
   // bank 0
   // Write channel
   .dla_ddr_in0_awvalid (dla_ddr_awvalid[0]),
@@ -565,7 +575,9 @@ dla_afu dla_afu_inst (
   .dla_ddr_in0_rdata   (dla_ddr_rdata[0]),
   .dla_ddr_in0_rlast   (dla_ddr_in0_rlast),
   .dla_ddr_in0_rid     (dla_ddr_in0_rid),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_1
   // bank 1
   // Write channel
   .dla_ddr_in1_awvalid (dla_ddr_awvalid[1]),
@@ -600,7 +612,9 @@ dla_afu dla_afu_inst (
   .dla_ddr_in1_rdata   (dla_ddr_rdata[1]),
   .dla_ddr_in1_rlast   (dla_ddr_in1_rlast),
   .dla_ddr_in1_rid     (dla_ddr_in1_rid),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_2
   // bank 2
   // Write channel
   .dla_ddr_in2_awvalid (dla_ddr_awvalid[2]),
@@ -635,7 +649,9 @@ dla_afu dla_afu_inst (
   .dla_ddr_in2_rdata   (dla_ddr_rdata[2]),
   .dla_ddr_in2_rlast   (dla_ddr_in2_rlast),
   .dla_ddr_in2_rid     (dla_ddr_in2_rid),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_3
   // bank 3
   // Write channel
   .dla_ddr_in3_awvalid (dla_ddr_awvalid[3]),
@@ -670,8 +686,10 @@ dla_afu dla_afu_inst (
   .dla_ddr_in3_rdata   (dla_ddr_rdata[3]),
   .dla_ddr_in3_rlast   (dla_ddr_in3_rlast),
   .dla_ddr_in3_rid     (dla_ddr_in3_rid),
+  `endif
 
   // DMA to DDR banks in
+  `ifdef DLA_ENABLE_GLOBAL_MEM_0
   // bank 0
   // Write channel
   .dma_ddr_in0_awvalid (dma_to_local_mem[0].awvalid),
@@ -723,7 +741,9 @@ dla_afu dla_afu_inst (
   .dma_ddr_in0_rid     (dma_ddr_in0_rid),
   .dma_ddr_in0_rresp   (dma_to_local_mem[0].r.resp),
   .dma_ddr_in0_ruser   (dma_to_local_mem[0].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_1
   // bank 1
   // Write channel
   .dma_ddr_in1_awvalid (dma_to_local_mem[1].awvalid),
@@ -775,7 +795,9 @@ dla_afu dla_afu_inst (
   .dma_ddr_in1_rid     (dma_ddr_in1_rid),
   .dma_ddr_in1_rresp   (dma_to_local_mem[1].r.resp),
   .dma_ddr_in1_ruser   (dma_to_local_mem[1].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_2
   // bank 2
   // Write channel
   .dma_ddr_in2_awvalid (dma_to_local_mem[2].awvalid),
@@ -827,7 +849,9 @@ dla_afu dla_afu_inst (
   .dma_ddr_in2_rid     (dma_ddr_in2_rid),
   .dma_ddr_in2_rresp   (dma_to_local_mem[2].r.resp),
   .dma_ddr_in2_ruser   (dma_to_local_mem[2].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_3
   // bank 3
   // Write channel
   .dma_ddr_in3_awvalid (dma_to_local_mem[3].awvalid),
@@ -879,8 +903,10 @@ dla_afu dla_afu_inst (
   .dma_ddr_in3_rid     (dma_ddr_in3_rid),
   .dma_ddr_in3_rresp   (dma_to_local_mem[3].r.resp),
   .dma_ddr_in3_ruser   (dma_to_local_mem[3].r.user),
+  `endif
 
   // internal MUX to DDR banks out
+  `ifdef DLA_ENABLE_GLOBAL_MEM_0
   // bank 0
   // Write channel
   .mux_ddr_out0_awvalid (local_mem_to_afu[0].awvalid),
@@ -932,7 +958,9 @@ dla_afu dla_afu_inst (
   .mux_ddr_out0_rresp   (local_mem_to_afu[0].r.resp),
   .mux_ddr_out0_rlast   (local_mem_to_afu[0].r.last),
   .mux_ddr_out0_ruser   (local_mem_to_afu[0].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_1
   // bank 1
   // Write channel
   .mux_ddr_out1_awvalid (local_mem_to_afu[1].awvalid),
@@ -984,7 +1012,9 @@ dla_afu dla_afu_inst (
   .mux_ddr_out1_rresp   (local_mem_to_afu[1].r.resp),
   .mux_ddr_out1_rlast   (local_mem_to_afu[1].r.last),
   .mux_ddr_out1_ruser   (local_mem_to_afu[1].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_2
   // bank 2
   // Write channel
   .mux_ddr_out2_awvalid (local_mem_to_afu[2].awvalid),
@@ -1036,7 +1066,9 @@ dla_afu dla_afu_inst (
   .mux_ddr_out2_rresp   (local_mem_to_afu[2].r.resp),
   .mux_ddr_out2_rlast   (local_mem_to_afu[2].r.last),
   .mux_ddr_out2_ruser   (local_mem_to_afu[2].r.user),
+  `endif
 
+  `ifdef DLA_ENABLE_GLOBAL_MEM_3
   // bank 3
   // Write channel
   .mux_ddr_out3_awvalid (local_mem_to_afu[3].awvalid),
@@ -1088,6 +1120,7 @@ dla_afu dla_afu_inst (
   .mux_ddr_out3_rresp   (local_mem_to_afu[3].r.resp),
   .mux_ddr_out3_rlast   (local_mem_to_afu[3].r.last),
   .mux_ddr_out3_ruser   (local_mem_to_afu[3].r.user),
+  `endif
 
   // Avalon master for HW timer, for inferring CoreDLA clock frequency from host
   .dla_hw_timer_waitrequest   (1'b0),                   // no backpressure
@@ -1104,54 +1137,97 @@ dla_afu dla_afu_inst (
 
 // width adaptation of AXI4 ID signals
 // output of MUX
-assign local_mem_to_afu[0].aw.id = {mux_ddr_out0_awid[17:16],mux_ddr_out0_awid[6:0]};
-assign local_mem_to_afu[0].ar.id = {mux_ddr_out0_arid[17:16],mux_ddr_out0_arid[6:0]};
-assign mux_ddr_out0_bid         = {local_mem_to_afu[0].b.id[8:7],9'b0,local_mem_to_afu[0].b.id[6:0]}; 
-assign mux_ddr_out0_rid         = {local_mem_to_afu[0].r.id[8:7],9'b0,local_mem_to_afu[0].r.id[6:0]};
-assign local_mem_to_afu[1].aw.id = {mux_ddr_out1_awid[17:16],mux_ddr_out1_awid[6:0]};
-assign local_mem_to_afu[1].ar.id = {mux_ddr_out1_arid[17:16],mux_ddr_out1_arid[6:0]};
-assign mux_ddr_out1_bid         = {local_mem_to_afu[1].b.id[8:7],9'b0,local_mem_to_afu[1].b.id[6:0]}; 
-assign mux_ddr_out1_rid         = {local_mem_to_afu[1].r.id[8:7],9'b0,local_mem_to_afu[1].r.id[6:0]};
-assign local_mem_to_afu[2].aw.id = {mux_ddr_out2_awid[17:16],mux_ddr_out2_awid[6:0]};
-assign local_mem_to_afu[2].ar.id = {mux_ddr_out2_arid[17:16],mux_ddr_out2_arid[6:0]};
-assign mux_ddr_out2_bid         = {local_mem_to_afu[2].b.id[8:7],9'b0,local_mem_to_afu[2].b.id[6:0]}; 
-assign mux_ddr_out2_rid         = {local_mem_to_afu[2].r.id[8:7],9'b0,local_mem_to_afu[2].r.id[6:0]};
-assign local_mem_to_afu[3].aw.id = {mux_ddr_out3_awid[17:16],mux_ddr_out3_awid[6:0]};
-assign local_mem_to_afu[3].ar.id = {mux_ddr_out3_arid[17:16],mux_ddr_out3_arid[6:0]};
-assign mux_ddr_out3_bid         = {local_mem_to_afu[3].b.id[8:7],9'b0,local_mem_to_afu[3].b.id[6:0]}; 
-assign mux_ddr_out3_rid         = {local_mem_to_afu[3].r.id[8:7],9'b0,local_mem_to_afu[3].r.id[6:0]};
+logic [($bits(mux_ddr_out0_bid)-$bits(local_mem_to_afu[0].b.id))-1:0] extension_bits_bid;
+logic [($bits(mux_ddr_out0_rid)-$bits(local_mem_to_afu[0].r.id))-1:0] extension_bits_rid;
+assign extension_bits_bid = 'b0;
+assign extension_bits_rid = 'b0;
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_0
+assign local_mem_to_afu[0].aw.id = {mux_ddr_out0_awid[17:16],mux_ddr_out0_awid[($bits(local_mem_to_afu[0].aw.id)-3):0]};
+assign local_mem_to_afu[0].ar.id = {mux_ddr_out0_arid[17:16],mux_ddr_out0_arid[($bits(local_mem_to_afu[0].ar.id)-3):0]};
+assign mux_ddr_out0_bid          = {local_mem_to_afu[0].b.id[(($bits(local_mem_to_afu[0].b.id))-1):(($bits(local_mem_to_afu[0].b.id))-2)],extension_bits_bid,local_mem_to_afu[0].b.id[(($bits(local_mem_to_afu[0].b.id))-3):0]};
+assign mux_ddr_out0_rid          = {local_mem_to_afu[0].r.id[(($bits(local_mem_to_afu[0].r.id))-1):(($bits(local_mem_to_afu[0].r.id))-2)],extension_bits_rid,local_mem_to_afu[0].r.id[(($bits(local_mem_to_afu[0].r.id))-3):0]};
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_1
+assign local_mem_to_afu[1].aw.id = {mux_ddr_out1_awid[17:16],mux_ddr_out1_awid[($bits(local_mem_to_afu[1].aw.id)-3):0]};
+assign local_mem_to_afu[1].ar.id = {mux_ddr_out1_arid[17:16],mux_ddr_out1_arid[($bits(local_mem_to_afu[1].ar.id)-3):0]}; 
+assign mux_ddr_out1_bid          = {local_mem_to_afu[1].b.id[(($bits(local_mem_to_afu[1].b.id))-1):(($bits(local_mem_to_afu[1].b.id))-2)],extension_bits_bid,local_mem_to_afu[1].b.id[(($bits(local_mem_to_afu[1].b.id))-3):0]};
+assign mux_ddr_out1_rid          = {local_mem_to_afu[1].r.id[(($bits(local_mem_to_afu[1].r.id))-1):(($bits(local_mem_to_afu[1].r.id))-2)],extension_bits_rid,local_mem_to_afu[1].r.id[(($bits(local_mem_to_afu[1].r.id))-3):0]};
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_2
+assign local_mem_to_afu[2].aw.id = {mux_ddr_out2_awid[17:16],mux_ddr_out2_awid[($bits(local_mem_to_afu[2].aw.id)-3):0]};
+assign local_mem_to_afu[2].ar.id = {mux_ddr_out2_arid[17:16],mux_ddr_out2_arid[($bits(local_mem_to_afu[2].ar.id)-3):0]};
+assign mux_ddr_out2_bid          = {local_mem_to_afu[2].b.id[(($bits(local_mem_to_afu[2].b.id))-1):(($bits(local_mem_to_afu[2].b.id))-2)],extension_bits_bid,local_mem_to_afu[2].b.id[(($bits(local_mem_to_afu[2].b.id))-3):0]};
+assign mux_ddr_out2_rid          = {local_mem_to_afu[2].r.id[(($bits(local_mem_to_afu[2].r.id))-1):(($bits(local_mem_to_afu[2].r.id))-2)],extension_bits_rid,local_mem_to_afu[2].r.id[(($bits(local_mem_to_afu[2].r.id))-3):0]};
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_3
+assign local_mem_to_afu[3].aw.id = {mux_ddr_out3_awid[17:16],mux_ddr_out3_awid[($bits(local_mem_to_afu[3].aw.id)-3):0]};
+assign local_mem_to_afu[3].ar.id = {mux_ddr_out3_arid[17:16],mux_ddr_out3_arid[($bits(local_mem_to_afu[3].ar.id)-3):0]};
+assign mux_ddr_out3_bid          = {local_mem_to_afu[3].b.id[(($bits(local_mem_to_afu[3].b.id))-1):(($bits(local_mem_to_afu[3].b.id))-2)],extension_bits_bid,local_mem_to_afu[3].b.id[(($bits(local_mem_to_afu[3].b.id))-3):0]};
+assign mux_ddr_out3_rid          = {local_mem_to_afu[3].r.id[(($bits(local_mem_to_afu[3].r.id))-1):(($bits(local_mem_to_afu[3].r.id))-2)],extension_bits_rid,local_mem_to_afu[3].r.id[(($bits(local_mem_to_afu[3].r.id))-3):0]};
+`endif
 
 // DLA IP inputs
+`ifdef DLA_ENABLE_GLOBAL_MEM_0
 assign dla_ddr_in0_arid = {14'b0,dla_ddr_arid[0]};
 assign dla_ddr_rid[0] = {dla_ddr_in0_rid[1:0]};
+assign dla_ddr_awid[0] = 16'h0000;
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_1
 assign dla_ddr_in1_arid = {14'b0,dla_ddr_arid[1]};
 assign dla_ddr_rid[1] = {dla_ddr_in1_rid[1:0]};
+assign dla_ddr_awid[1] = 16'h0001;
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_2
 assign dla_ddr_in2_arid = {14'b0,dla_ddr_arid[2]};
 assign dla_ddr_rid[2] = {dla_ddr_in2_rid[1:0]};
+assign dla_ddr_awid[2] = 16'h0010;
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_3
 assign dla_ddr_in3_arid = {14'b0,dla_ddr_arid[3]};
 assign dla_ddr_rid[3] = {dla_ddr_in3_rid[1:0]};
-assign dla_ddr_awid[0] = 16'h0000;
-assign dla_ddr_awid[1] = 16'h0001;
-assign dla_ddr_awid[2] = 16'h0010;
 assign dla_ddr_awid[3] = 16'h0011;
+`endif
 
 // DMA DDR inputs
-assign dma_ddr_in0_awid = {7'b0,dma_to_local_mem[0].aw.id};
-assign dma_ddr_in0_arid = {7'b0,dma_to_local_mem[0].ar.id};
-assign dma_to_local_mem[0].b.id = dma_ddr_in0_bid[8:0];
-assign dma_to_local_mem[0].r.id = dma_ddr_in0_rid[8:0];
-assign dma_ddr_in1_awid = {7'b0,dma_to_local_mem[1].aw.id};
-assign dma_ddr_in1_arid = {7'b0,dma_to_local_mem[1].ar.id};
-assign dma_to_local_mem[1].b.id = dma_ddr_in1_bid[8:0];
-assign dma_to_local_mem[1].r.id = dma_ddr_in1_rid[8:0];
-assign dma_ddr_in2_awid = {7'b0,dma_to_local_mem[2].aw.id};
-assign dma_ddr_in2_arid = {7'b0,dma_to_local_mem[2].ar.id};
-assign dma_to_local_mem[2].b.id = dma_ddr_in2_bid[8:0];
-assign dma_to_local_mem[2].r.id = dma_ddr_in2_rid[8:0];
-assign dma_ddr_in3_awid = {7'b0,dma_to_local_mem[3].aw.id};
-assign dma_ddr_in3_arid = {7'b0,dma_to_local_mem[3].ar.id};
-assign dma_to_local_mem[3].b.id = dma_ddr_in3_bid[8:0];
-assign dma_to_local_mem[3].r.id = dma_ddr_in3_rid[8:0];
+logic [($bits(dma_ddr_in0_awid)-$bits(dma_to_local_mem[0].aw.id))-1:0] extension_bits_awid;
+logic [($bits(dma_ddr_in0_arid)-$bits(dma_to_local_mem[0].ar.id))-1:0] extension_bits_arid;
+assign extension_bits_awid = 'b0;
+assign extension_bits_arid = 'b0;
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_0
+assign dma_ddr_in0_awid = {extension_bits_awid,dma_to_local_mem[0].aw.id};
+assign dma_ddr_in0_arid = {extension_bits_arid,dma_to_local_mem[0].ar.id};
+assign dma_to_local_mem[0].b.id = dma_ddr_in0_bid[$bits(dma_to_local_mem[0].b.id)-1:0];
+assign dma_to_local_mem[0].r.id = dma_ddr_in0_rid[$bits(dma_to_local_mem[0].r.id)-1:0];
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_1
+assign dma_ddr_in1_awid = {extension_bits_awid,dma_to_local_mem[1].aw.id};
+assign dma_ddr_in1_arid = {extension_bits_arid,dma_to_local_mem[1].ar.id};
+assign dma_to_local_mem[1].b.id = dma_ddr_in1_bid[$bits(dma_to_local_mem[1].b.id)-1:0];
+assign dma_to_local_mem[1].r.id = dma_ddr_in1_rid[$bits(dma_to_local_mem[1].r.id)-1:0];
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_2
+assign dma_ddr_in2_awid = {extension_bits_awid,dma_to_local_mem[2].aw.id};
+assign dma_ddr_in2_arid = {extension_bits_arid,dma_to_local_mem[2].ar.id};
+assign dma_to_local_mem[2].b.id = dma_ddr_in2_bid[$bits(dma_to_local_mem[2].b.id)-1:0];
+assign dma_to_local_mem[2].r.id = dma_ddr_in2_rid[$bits(dma_to_local_mem[2].r.id)-1:0];
+`endif
+
+`ifdef DLA_ENABLE_GLOBAL_MEM_3
+assign dma_ddr_in3_awid = {extension_bits_awid,dma_to_local_mem[3].aw.id};
+assign dma_ddr_in3_arid = {extension_bits_arid,dma_to_local_mem[3].ar.id};
+assign dma_to_local_mem[3].b.id = dma_ddr_in3_bid[$bits(dma_to_local_mem[3].b.id)-1:0];
+assign dma_to_local_mem[3].r.id = dma_ddr_in3_rid[$bits(dma_to_local_mem[3].r.id)-1:0];
+`endif
 
 // DMA CSR inputs
 assign mmio64_to_afu_dma.aw.addr = {4'b0,dma_csr_awaddr};
@@ -1180,7 +1256,7 @@ assign dla_hw_timer_readdata = dla_hw_timer_counter;
 dma_top  
 #(
   .NUM_LOCAL_MEM_BANKS(MAX_DLA_INSTANCES),
-  .DDR_ADDR_W(DDR_ADDR_W),
+  .DDR_BANK_ADDR_W(DDR_BANK_ADDR_W),
   .HOST_ADDR_W(HOST_ADDR_W)
 ) dma_top_inst
 (

@@ -70,7 +70,7 @@ module dla_hld_lsu_read_cache #(
     parameter bit BYPASS_LSU_DATA_FIFO,         //read data returned to the LSU from the cache is backpressurable, don't need another fifo inside LSU's read data alignment to catch non-backpressurable data
     parameter bit PIPELINE_UPDATE_TO_CACHE,     //optional pipeline stage can be inserted when updating the cache, allows more time for routing when the cache is large and therefore physically spread apart on the FPGA
     parameter bit PIPELINE_READ_FROM_CACHE,     //optional pipeline stage can be inserted before consuming read data from the cache, allows more time for routing when the cache is large
-    
+
     //parameters that are the same as dla_hld_lsu.sv
     parameter bit ASYNC_RESET,                  //0 = registers consume reset synchronously, 1 = registers consume reset asynchronously
     parameter int ADDR_WIDTH,                   //width of address bus, for addresses that are byte addresses
@@ -84,12 +84,13 @@ module dla_hld_lsu_read_cache #(
     parameter int M20K_WIDE_FIFO_DEPTH,         //use a deep fifo if handshaking is expected to take hundreds of clocks e.g. going off chip, for wide data path use M20K in shallowest mode, but may as well use all depth available
     parameter int M20K_NARROW_FIFO_DEPTH,       //if we need a deep fifo but the data path is narrow e.g. up to 10 bits which is the narrowest M20K on S10, can get additional depth for without needing more M20K
     parameter int BURST_COAL_MAX_TIMEOUT_BIT,   //limit how large the dynamic timeout threshold can get inside burst coalescer
-    parameter bit USE_AXI                       //0 = use AvalonMM, 1 = use AXI, this affects how the burstcount is constructed
+    parameter bit USE_AXI,                      //0 = use AvalonMM, 1 = use AXI, this affects how the burstcount is constructed
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
 ) (
     input  wire                         clock,
     input  wire                         resetn,
     input  wire                         i_flush_cache,          //a positive edge must be provided every time the contents change inside the region of memory accessible by the read LSU
-    
+
     //kernel avm interface
     input  wire                         k_read,
     input  wire        [ADDR_WIDTH-1:0] k_address,
@@ -98,7 +99,7 @@ module dla_hld_lsu_read_cache #(
     output logic                        k_readdatavalid,        //if BYPASS_LSU_DATA_FIFO=1 this means cache has data that LSU may or may not consume, if BYPASS_LSU_DATA_FIFO=0 this means LSU must consume data
     output logic [8*MEM_DATA_BYTES-1:0] k_readdata,
     input  wire                         k_readdata_accepted,    //if BYPASS_LSU_DATA_FIFO=1 this is how LSU indicates it consumed data, otherwise ignore this signal
-    
+
     //memory avm interface
     output logic                        m_read,
     output logic       [ADDR_WIDTH-1:0] m_address,
@@ -107,83 +108,83 @@ module dla_hld_lsu_read_cache #(
     input  wire                         m_readdatavalid,
     input  wire  [8*MEM_DATA_BYTES-1:0] m_readdata
 );
-    
+
     //derived parameters
     localparam int CACHE_ADDR_BITS = $clog2(CACHE_SIZE_BYTES/MEM_DATA_BYTES);   //number of address bits for the cache memory
     localparam int UPPER_ADDR_BITS = WORD_ADDR_WIDTH - CACHE_ADDR_BITS;         //number of upper bits of the byte address need to be stored in the cache line
-    
-    
-    
+
+
+
     ///////////////
     //  Signals  //
     ///////////////
-    
+
     //reset
     logic aclrn, sclrn, resetn_synchronized;
-    
+
     //burst splitter
     logic                           in_read, in_waitrequest;
     logic          [ADDR_WIDTH-1:0] in_address;
     logic     [WORD_ADDR_WIDTH-1:0] in_word_addr;
-    
+
     //check for cache hit or miss
     logic                           tag_cache_was_read, tag_cache_read_data_is_valid;
     logic     [WORD_ADDR_WIDTH-1:0] late_in_word_addr, late_two_in_word_addr, late_three_in_word_addr;
     logic                           mixed_port_read_during_write, read_during_write_invalidate_read_data;
     logic                           can_write_to_order_fifo, data_for_writing_to_order_fifo;
-    
+
     //order fifo
     logic                           order_fifo_wr_req, order_fifo_almost_full, order_fifo_empty, order_fifo_rd_ack, order_fifo_temp_valid, order_fifo_temp_stall;
     logic                           order_fifo_wr_data, order_fifo_rd_data, order_fifo_temp_data;
-    
+
     //hit fifo
     logic                           hit_fifo_wr_req, read_from_hit_fifo, hit_fifo_not_empty, hit_fifo_rd_ack;
     logic    [8*MEM_DATA_BYTES-1:0] hit_fifo_wr_data, hit_fifo_rd_data;
-    
+
     //burst coalescer to avalon request interface
     logic                           burstcoal_valid;
     logic     [WORD_ADDR_WIDTH-1:0] burstcoal_word_addr;
     logic                           avm_ctrl_fifo_empty, avm_ctrl_fifo_rd_ack;
     logic     [WORD_ADDR_WIDTH-1:0] avm_word_address;
     logic    [BURSTCOUNT_WIDTH-1:0] avm_burstcount;
-    
+
     //rsp fifo
     logic                           rsp_fifo_wr_req, read_from_rsp_fifo, rsp_fifo_not_empty, rsp_fifo_rd_ack;
     logic    [8*MEM_DATA_BYTES-1:0] rsp_fifo_wr_data, rsp_fifo_rd_data;
     logic                           late_rsp_fifo_wr_req, late_two_rsp_fifo_wr_req;
-    
+
     //return read data to LSU
     logic                           can_read_order_fifo;
     logic                           late_order_fifo_rd_data;
     logic                           late_order_fifo_rd_ack, late_two_order_fifo_rd_ack;
-    
+
     //addr fifo
     logic                           addr_fifo_wr_req, addr_fifo_empty, addr_fifo_rd_ack;
     logic     [WORD_ADDR_WIDTH-1:0] addr_fifo_wr_data, addr_fifo_rd_data;
-    
+
     //flush
     logic       [CACHE_ADDR_BITS:0] flush_counter;
     logic                           is_flushing, late_flush_cache, flush_cache_posedge;
     logic                           flush_writing_done, late_flush_writing_done, flush_reading_done;
-    
+
     //tag cache memory
     logic                           tag_cache_wr_en;
     logic     [CACHE_ADDR_BITS-1:0] tag_cache_wr_addr, tag_cache_rd_addr;
     logic       [UPPER_ADDR_BITS:0] tag_cache_wr_data, tag_cache_rd_data;
     logic                           valid_read_from_cache;
     logic     [UPPER_ADDR_BITS-1:0] upper_addr_read_from_cache;
-    
+
     //data cache memory
     logic                           data_cache_wr_en;
     logic     [CACHE_ADDR_BITS-1:0] data_cache_wr_addr, data_cache_rd_addr;
     logic    [8*MEM_DATA_BYTES-1:0] data_cache_wr_data, data_cache_rd_data;
-    
-    
-    
+
+
+
     /////////////
     //  Reset  //
     /////////////
-    
+
     dla_acl_reset_handler
     #(
         .ASYNC_RESET            (ASYNC_RESET),
@@ -200,13 +201,13 @@ module dla_hld_lsu_read_cache #(
         .o_resetn_synchronized  (resetn_synchronized),
         .o_sclrn                (sclrn)
     );
-    
-    
-    
+
+
+
     //////////////////////
     //  Burst Splitter  //
     //////////////////////
-    
+
     // the cache needs one read request per memory word, ideally the LSU should disable burst coalescing so that we are not just undoing it here
     generate
     if (BYPASS_BURST_SPLITTER) begin : NO_BURST_SPLIT
@@ -231,7 +232,7 @@ module dla_hld_lsu_read_cache #(
         (
             .clock                      (clock),
             .resetn                     (resetn_synchronized),
-            
+
             .up_waitrequest             (k_waitrequest),
             .up_read                    (k_read),
             .up_write                   (1'b0),
@@ -239,7 +240,7 @@ module dla_hld_lsu_read_cache #(
             .up_writedata               (),
             .up_byteenable              (),
             .up_burstcount              (k_burstcount),
-            
+
             .down_waitrequest           (in_waitrequest),
             .down_read                  (in_read),
             .down_write                 (),
@@ -250,13 +251,13 @@ module dla_hld_lsu_read_cache #(
         );
     end
     endgenerate
-    
-    
-    
+
+
+
     ///////////////////////////////////
     //  Check for cache hit or miss  //
     ///////////////////////////////////
-    
+
     // each cache line needs to store 3 things:
     // 1. valid -- this is set to 0 during flush, set to 1 when snooping on read data returned from memory
     // 2. upper address -- multiple addresses map to the same cache line, this is stored to indicate which address this cache line had stored
@@ -265,40 +266,40 @@ module dla_hld_lsu_read_cache #(
     // tag cache is always accessed one clock cycle before the same cache line in the data cache
     // this allows 1 clock cycle to check if the upper address bits match, if we read the tag cache and data cache on the same clock cycle we'd have to keep the data live for an extra clock cycle
     // for consistency, the snoop on read data returned from memory also updates cache with the same timing -- when the tag cache is updated, the same cache line in the data cache updates one clock cycle later
-    
+
     assign in_word_addr = in_address[ADDR_WIDTH-1:INTRA_ADDR_WIDTH];    //remove the lower bits which specify a location inside the memory word
     assign tag_cache_rd_addr = in_word_addr[CACHE_ADDR_BITS-1:0];       //which cache line to read from in the tag cache
-    
+
     //write the result into order fifo
     always_ff @(posedge clock) begin
         //one clock after burst splitter
         tag_cache_was_read <= in_read & ~in_waitrequest;
         late_in_word_addr <= in_word_addr;
         mixed_port_read_during_write <= (tag_cache_wr_addr == tag_cache_rd_addr) & tag_cache_wr_en; //ram will return x read data, treat as cache miss
-        
+
         //two clocks after
         tag_cache_read_data_is_valid <= tag_cache_was_read;
         late_two_in_word_addr <= late_in_word_addr;
         read_during_write_invalidate_read_data <= mixed_port_read_during_write;
-        
+
         //three clocks after
         can_write_to_order_fifo <= tag_cache_read_data_is_valid;
         //order fifo data: 1 means cache hit, 0 means cache miss, miss if anything funny happens (flushing, x read from ram) or if it is a real miss (invalid or upper addr mismatch)
         data_for_writing_to_order_fifo <= flush_reading_done & ~read_during_write_invalidate_read_data & valid_read_from_cache & (upper_addr_read_from_cache == late_two_in_word_addr[WORD_ADDR_WIDTH-1:CACHE_ADDR_BITS]);
         late_three_in_word_addr <= late_two_in_word_addr;   //if cache miss, what address should we request from global mem
     end
-    
-    
-    
+
+
+
     //////////////////
     //  Order FIFO  //
     //////////////////
-    
+
     // need to return data to the LSU in the correct order, order_fifo tracks whether the next word to return to the LSU should come from the hit fifo or rsp fifo
     // capacity of order_fifo limits the total number of outstanding transactions, if all other fifos in the cache are at least this deep then backpressure only from order_fifo is sufficient
-    
+
     assign in_waitrequest = (CACHE_NEVER_OVERFLOWS) ? 1'b0 : order_fifo_almost_full;
-    
+
     generate
     if (PIPELINE_READ_FROM_CACHE) begin : GEN_PIPE_ORDER_FIFO_WRITE
         always_ff @(posedge clock) begin
@@ -311,7 +312,7 @@ module dla_hld_lsu_read_cache #(
         assign order_fifo_wr_data = data_for_writing_to_order_fifo;
     end
     endgenerate
-    
+
     dla_hld_fifo #(
         .WIDTH              (1),
         .DEPTH              (M20K_WIDE_FIFO_DEPTH),
@@ -336,7 +337,7 @@ module dla_hld_lsu_read_cache #(
         .o_empty            (),
         .ecc_err_status     ()
     );
-    
+
     //prefetch into a 2-deep register based fifo, this eases placement since data now comes from an ALM register rather than M20K hardened read data register
     dla_hld_fifo #(
         .REGISTERED_DATA_OUT_COUNT (1),
@@ -361,15 +362,15 @@ module dla_hld_lsu_read_cache #(
         .o_empty            (order_fifo_empty),
         .ecc_err_status     ()
     );
-    
-    
-    
+
+
+
     ////////////////
     //  Hit FIFO  //
     ////////////////
-    
+
     //if there is a cache hit, store that data in the hit fifo, cannot read it from the cache later on (e.g. if waiting due to an earlier cache miss) since the cache line could be modified before that later read
-    
+
     generate
     if (PIPELINE_READ_FROM_CACHE) begin : GEN_PIPE_HIT_FIFO_WRITE
         always_ff @(posedge clock) begin
@@ -382,7 +383,7 @@ module dla_hld_lsu_read_cache #(
         assign hit_fifo_wr_data = data_cache_rd_data;
     end
     endgenerate
-    
+
     dla_hld_fifo #(
         .WIDTH              (8*MEM_DATA_BYTES),
         .DEPTH              (M20K_WIDE_FIFO_DEPTH),
@@ -406,20 +407,20 @@ module dla_hld_lsu_read_cache #(
         .o_empty            (), //guaranteed to not underflow
         .ecc_err_status     ()
     );
-    
+
     //order fifo and hit fifo are written to at the same time
     //by the time we can read from the order fifo and it says this was a hit, guaranteed that the hit fifo won't be empty
     assign hit_fifo_not_empty = 1'b1;
-    
-    
-    
+
+
+
     ///////////////////////////////////////////////////
     //  Burst Coalescer to Avalon Request Interface  //
     ///////////////////////////////////////////////////
-    
+
     //if there is a cache miss, request data from global mem
-    
-    
+
+
     generate
     if (PIPELINE_READ_FROM_CACHE) begin : GEN_PIPE_INTO_BURST_COAL
         always_ff @(posedge clock) begin
@@ -432,7 +433,7 @@ module dla_hld_lsu_read_cache #(
         assign burstcoal_word_addr = late_three_in_word_addr;
     end
     endgenerate
-    
+
     dla_hld_lsu_burst_coalescer
     #(
         .ASYNC_RESET                    (ASYNC_RESET),
@@ -449,39 +450,40 @@ module dla_hld_lsu_read_cache #(
         .ADD_TO_ADDR_IS_ZERO            (1),    //i_add_to_base_addr is tied to 0, no adder is needed inside burstcoal which also means some pipeline stages can be removed
         .EXTRA_WRITE_LATENCY            (0),
         .USE_AXI                        (USE_AXI),
-        .ADDR_ADAPT_WIDTH               (0)
+        .ADDR_ADAPT_WIDTH               (0),
+        .DEVICE_FAMILY                  (DEVICE_FAMILY)
     )
     dla_hld_lsu_burst_coalescer_inst
     (
         .clock                          (clock),
         .resetn                         (resetn_synchronized),
-        
+
         //input to burst coalescing
         .i_valid                        (burstcoal_valid),
         .i_base_addr                    (burstcoal_word_addr),
         .i_add_to_base_addr             ('0),   //there is no unalignment which causes the access to go into the next mem word
         .o_almost_full                  (),     //the order fifo bounds the size of all other fifos, by construction the avm_ctrl_fifo inside here cannot overflow
         .o_disable_coalescer_timeout    (),
-    
+
         //output to avm addr
         .o_avm_ctrl_fifo_empty          (avm_ctrl_fifo_empty),
         .i_avm_ctrl_fifo_rd_ack         (avm_ctrl_fifo_rd_ack),
         .o_avm_word_address             (avm_word_address),
         .o_avm_burstcount               (avm_burstcount)
     );
-    
+
     //convert to avalon
     assign m_read = ~avm_ctrl_fifo_empty;
     assign m_burstcount = avm_burstcount;
     assign m_address = {avm_word_address, {INTRA_ADDR_WIDTH{1'h0}}};
     assign avm_ctrl_fifo_rd_ack = m_read & ~m_waitrequest;
-    
-    
-    
+
+
+
     ////////////////
     //  Rsp FIFO  //
     ////////////////
-    
+
     //capture the response from global memory
     assign rsp_fifo_wr_req = m_readdatavalid;
     assign rsp_fifo_wr_data = m_readdata;
@@ -509,14 +511,14 @@ module dla_hld_lsu_read_cache #(
         .o_empty            (), //this is tracked externally
         .ecc_err_status     ()
     );
-    
+
     //track empty separately so that we can reserve a read before the read itself actually happens
     //if fifo write to read latency is N, need to delay write request by N-1 clock cycle to track empty, the pipelining below assumes write to read latency of 3
     always_ff @(posedge clock) begin
         late_rsp_fifo_wr_req <= rsp_fifo_wr_req;
         late_two_rsp_fifo_wr_req <= late_rsp_fifo_wr_req;
     end
-    
+
     dla_acl_tessellated_incr_decr_threshold #(
         .CAPACITY                   (M20K_WIDE_FIFO_DEPTH),
         .THRESHOLD                  (1),
@@ -535,20 +537,20 @@ module dla_hld_lsu_read_cache #(
         .decr_raw                   (read_from_rsp_fifo),
         .threshold_reached          (rsp_fifo_not_empty)
     );
-    
-    
-    
+
+
+
     ///////////////////////////////
     //  Return read data to LSU  //
     ///////////////////////////////
-    
+
     //naming convention:
     //- ***_rd_ack is the drives the i_stall port of that fifo
     //- read_from_*** reserves a read from that fifo before the read actually happens, fifo empty must be tracked externally
-    
+
     //use the order fifo to determine whether to read from the hit fifo or the response fifo
     assign can_read_order_fifo = ~order_fifo_empty & ((order_fifo_rd_data) ? hit_fifo_not_empty : rsp_fifo_not_empty);
-    
+
     generate
     if (BYPASS_LSU_DATA_FIFO) begin : READ_DATA_BACKPRESSURE    //mimic the read interface of avm_rd_data_fifo inside the read LSU
         assign k_readdatavalid = can_read_order_fifo;           //readdatavalid means data is available, if the LSU accepts it data will be available two clocks later, which is the same latency to read from avm_rd_data_fifo
@@ -563,29 +565,29 @@ module dla_hld_lsu_read_cache #(
         assign read_from_rsp_fifo = ~order_fifo_empty & ~order_fifo_rd_data & rsp_fifo_not_empty;
     end
     endgenerate
-    
+
     always_ff @(posedge clock) begin
         //one clock after read from order fifo
         late_order_fifo_rd_ack <= order_fifo_rd_ack;
         late_order_fifo_rd_data <= order_fifo_rd_data;
         hit_fifo_rd_ack <= read_from_hit_fifo;
         rsp_fifo_rd_ack <= read_from_rsp_fifo;
-        
+
         //two clocks after -- return data to kernel
         late_two_order_fifo_rd_ack <= late_order_fifo_rd_ack;
         k_readdata <= (late_order_fifo_rd_data) ? hit_fifo_rd_data : rsp_fifo_rd_data;
     end
-    
-    
-    
+
+
+
     /////////////////
     //  Addr FIFO  //
     /////////////////
-    
+
     //to update the cache, we need to know the address for each word of data returned from global memory
     assign addr_fifo_wr_req = burstcoal_valid;
     assign addr_fifo_wr_data = burstcoal_word_addr;
-    
+
     dla_hld_fifo #(
         .WIDTH              (WORD_ADDR_WIDTH),
         .DEPTH              (M20K_WIDE_FIFO_DEPTH),
@@ -609,22 +611,22 @@ module dla_hld_lsu_read_cache #(
         .o_empty            (),
         .ecc_err_status     ()
     );
-    
+
     assign addr_fifo_rd_ack = read_from_rsp_fifo;
-    
-    
-    
+
+
+
     /////////////
     //  Flush  //
     /////////////
-    
+
     //the cache must be flushed every time the contents could have changed in the region of memory accessible by this read LSU
     //every LSU inside an opencl kernel is flushed each time that kernel starts (flush has no effect for LSUs without read cache)
     always_ff @(posedge clock) begin
         late_flush_cache <= i_flush_cache;
         flush_cache_posedge <= i_flush_cache & ~late_flush_cache;
     end
-    
+
     //as an example, if CACHE_ADDR_BITS is 5, flush_counter is 6 bits, it starts the flush at 63, counts down to 31 and then gets stuck there
     //if we look at the bottom 5 of flush_counter, it sweeps the entire address space (from 31 down to 0, then 31 is where it rests)
     always_ff @(posedge clock or negedge aclrn) begin
@@ -636,7 +638,7 @@ module dla_hld_lsu_read_cache #(
         end
     end
     assign is_flushing = flush_counter[CACHE_ADDR_BITS];
-    
+
     //after the flush is done, keep the flush status live for another 2 clocks since cache memory has 2 clocks of read latency, still need to filter read data if the read request was issued before flush had finished
     always_ff @(posedge clock) begin
         //timing of flush_writing_done depends on PIPELINE_UPDATE_TO_CACHE, see the "update the cache" section below
@@ -645,30 +647,30 @@ module dla_hld_lsu_read_cache #(
         late_flush_writing_done <= flush_writing_done;
         flush_reading_done <= late_flush_writing_done;
     end
-    
-    
-    
+
+
+
     ////////////////////////
     //  Update the Cache  //
     ////////////////////////
-    
+
     // the cache only has one write port but it can be updated by two things:
     // 1. flush -- invalidate all cache lines
     // 2. snoop on read data returned from global memory -- this does not help the cache miss itself, it only may help a future read request to the same address
     // While flush is running, the cache does not update with data read from global memory
-    
+
     //whatever cache line was accessed in the tag cache (valid and upper address), that same cache line is accessed in the data cache one clock cycle later
     //the upper address read from the tag cache needs to be compared against the byte address of the read request, as a part of checking whether the cache line is valid
     //one pipeline stage is used for this comparison, so only 1 clock cycle after the tag cache is read do we know if the cache line was valid
     //if we read the data cache at the same time as the tag cache, would need to keep the data live for one clock cycle before potentially writing it to the hit fifo
     //the choice to read the tag cache one clock ahead of the data cache is purely to save area
-    
+
     //unfornately this slightly complicates things for the cache update, it must follow the same convention of update the tag cache one clock before the data cache for data consistency
     //if we updated the cache directly from the data returned from memory, we'd want to know one clock cycle ahead of time when readdatavalid is going to be 1 so we can update the tag
     //in reality that means we would have to delay readata by 1 clock, which means we are spending the register that we saved earlier
     //to solve this problem, the cache is updated by snooping on the data read from the rsp fifo
     //there is some lookahead circuitry which reserves a read from rsp_fifo one clock cycle before the fifo itself is actually read, this is the time when we update the tag cache
-    
+
     generate
     if (!PIPELINE_UPDATE_TO_CACHE) begin : NO_PIPELINE_CACHE_UPDATE
         //the write enable and the write address to the m20k are being driven by combinational logic, but this is a narrow m20k and will probably only be a single physical m20k
@@ -688,24 +690,24 @@ module dla_hld_lsu_read_cache #(
         end
     end
     endgenerate
-    
+
     //tag contains both valid and upper_addr, split the read data into its components
     assign {valid_read_from_cache, upper_addr_read_from_cache} = tag_cache_rd_data;
-    
+
     //access the same cache line in the data cache one clock after it was accessed in the tag cache
     always_ff @(posedge clock) begin
         data_cache_wr_en <= tag_cache_wr_en;
         data_cache_wr_addr <= tag_cache_wr_addr;
         data_cache_rd_addr <= tag_cache_rd_addr;
     end
-    
-    
-    
-    
+
+
+
+
     ////////////////////
     //  Cache Memory  //
     ////////////////////
-    
+
     dla_hld_lsu_read_cache_simple_dual_port_ram #(
         .WIDTH      (UPPER_ADDR_BITS+1),
         .ADDR       (CACHE_ADDR_BITS)
@@ -719,7 +721,7 @@ module dla_hld_lsu_read_cache #(
         .rd_addr    (tag_cache_rd_addr),
         .rd_data    (tag_cache_rd_data)
     );
-    
+
     dla_hld_lsu_read_cache_simple_dual_port_ram #(
         .WIDTH      (8*MEM_DATA_BYTES),
         .ADDR       (CACHE_ADDR_BITS)
@@ -733,7 +735,7 @@ module dla_hld_lsu_read_cache #(
         .rd_addr    (data_cache_rd_addr),
         .rd_data    (data_cache_rd_data)
     );
-    
+
 endmodule
 
 
@@ -745,12 +747,12 @@ module dla_hld_lsu_read_cache_simple_dual_port_ram #(
 ) (
     input  wire                 clock,
     //no reset
-    
+
     //write port, no byteenable
     input  wire                 wr_en,
     input  wire      [ADDR-1:0] wr_addr,
     input  wire     [WIDTH-1:0] wr_data,
-    
+
     //read port, read latency is 2 clocks (both input and output of altera_syncram is registered)
     input  wire      [ADDR-1:0] rd_addr,
     output logic    [WIDTH-1:0] rd_data
@@ -788,16 +790,16 @@ module dla_hld_lsu_read_cache_simple_dual_port_ram #(
     (
         //clock, no reset
         .clock0     (clock),
-        
+
         //write port
         .wren_a     (wr_en),
         .address_a  (wr_addr),
         .data_a     (wr_data),
-        
+
         //read port
         .address_b  (rd_addr),
         .q_b        (rd_data),
-        
+
         //unused
         .aclr0 (1'b0),
         .aclr1 (1'b0),
@@ -822,7 +824,7 @@ module dla_hld_lsu_read_cache_simple_dual_port_ram #(
         .sclr (1'b0),
         .wren_b (1'b0)
     );
-    
+
 endmodule
 
 

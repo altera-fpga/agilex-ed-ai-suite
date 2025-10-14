@@ -83,3 +83,32 @@ interface scratchpad_read_addr_if #(
   modport sender (output data);
   modport receiver (input data);
 endinterface
+
+interface scratchpad_update_if #(
+  parameter int ADDR_WIDTH,
+  parameter int MEM_ID_WIDTH,
+  parameter int DATA_WIDTH
+);
+  typedef struct packed {
+      logic                       is_filter;
+      logic [ADDR_WIDTH-1:0]      addr;
+      logic [MEM_ID_WIDTH-1:0]    mem_id;
+      logic [DATA_WIDTH-1:0]      data;
+  } data_t;
+  data_t data;
+  modport sender (output data);
+endinterface
+
+interface configuration_update_if #(
+  parameter int ADDR_WIDTH,
+  parameter int DATA_WIDTH
+);
+  typedef struct packed {
+      logic [ADDR_WIDTH-1:0]      addr;
+      logic [DATA_WIDTH-1:0]      data;
+  } data_t;
+  data_t data;
+  logic valid;
+  modport sender (output data, output valid);
+  modport receiver (input data, input valid);
+endinterface

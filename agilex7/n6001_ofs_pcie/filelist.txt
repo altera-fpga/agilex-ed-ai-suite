@@ -8,6 +8,7 @@ dla_afu.ip
 dla_afu_hw.tcl
 parameters.tcl
 dla_host_mem_if_mux.sv
+ofs_dla.vh
 ofs_plat_afu.sv
 
 # DMA controller

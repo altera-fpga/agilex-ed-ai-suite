@@ -1,4 +1,4 @@
-package require -exact qsys 24.3
+package require -exact qsys 25.3
 
 proc do_create_system {} {
 	# system name
@@ -147,7 +147,7 @@ proc do_create_system {} {
 proc instantiate_jtag_address_span_extender {} {
 	upvar jtag_address_span_extender_inst jtag_address_span_extender_inst
 	upvar emif_addr_width emif_addr_width
-	add_component $jtag_address_span_extender_inst ip/ed_zero/ed_zero_jtag_address_span_extender_0.ip altera_address_span_extender address_span_extender_0 19.2.0
+	add_component $jtag_address_span_extender_inst ip/ed_zero/ed_zero_jtag_address_span_extender_0.ip altera_address_span_extender address_span_extender_0
 	load_component $jtag_address_span_extender_inst
 	set data_width 32
 	set_component_parameter_value BURSTCOUNT_WIDTH {1}
@@ -170,7 +170,7 @@ proc instantiate_emif_sideband_driver {} {
 	upvar emif_sideband_driver emif_sideband_driver
 	#### EMIF sideband driver ###########
 	# Query if EMIF calibration is done, and release the user reset accordingly
-	add_component $emif_sideband_driver ip/ed_zero/ed_zero_axil_driver_0.ip emif_ph2_axil_driver emif_ph2_axil_driver_inst 1.0.0
+	add_component $emif_sideband_driver ip/ed_zero/ed_zero_axil_driver_0.ip emif_ph2_axil_driver emif_ph2_axil_driver_inst
 	load_component $emif_sideband_driver
 	set_component_parameter_value AXIL_DRIVER_ADDRESS_WIDTH {32}
 	set_component_project_property HIDE_FROM_IP_CATALOG {false}
@@ -181,7 +181,7 @@ proc instantiate_emif_sideband_driver {} {
 proc instantiate_csr_bridge {} {
 	upvar csr_data_bridge csr_data_bridge
 	##### CSR Bridge #######################
-	add_component $csr_data_bridge ip/ed_zero/ed_zero_axi_bridge_1.ip altera_axi_bridge axi_bridge_1 19.9.3
+	add_component $csr_data_bridge ip/ed_zero/ed_zero_axi_bridge_1.ip altera_axi_bridge axi_bridge_1
 	load_component $csr_data_bridge
 	set_component_parameter_value ACE_LITE_SUPPORT {0}
 	set_component_parameter_value ADDR_WIDTH {11}
@@ -271,7 +271,7 @@ proc instantiate_emif_bridge {} {
 	upvar emif_data_bridge emif_data_bridge
 	upvar emif_data_width emif_data_width
 	upvar emif_addr_width emif_addr_width
-	add_component $emif_data_bridge ip/ed_zero/ed_zero_axi_bridge_0.ip altera_axi_bridge axi_bridge_0 19.9.3
+	add_component $emif_data_bridge ip/ed_zero/ed_zero_axi_bridge_0.ip altera_axi_bridge axi_bridge_0
 	load_component $emif_data_bridge
 	set_component_parameter_value ACE_LITE_SUPPORT {0}
 	# CoreDLA address width is only 32-bit
@@ -366,14 +366,12 @@ proc instantiate_emif {} {
 	upvar emif_ddr4_phy_freq_mhz emif_ddr4_phy_freq_mhz
 	upvar emif_ddr4_ref_clk_frequency_mhz emif_ddr4_ref_clk_frequency_mhz
 
-	add_component ${emif} ip/ed_zero/ed_zero_emif_ddr4_0.ip emif_io96b_ddr4comp emif_io96b_ddr4comp_0 3.0.0
+	add_component ${emif} ip/ed_zero/ed_zero_emif_ddr4_0.ip emif_io96b_ddr4comp emif_io96b_ddr4comp_0
 	load_component ${emif}
 	set_component_parameter_value ANALOG_PARAM_DERIVATION_PARAM_NAME {}
-	set_component_parameter_value CTRL_AUTO_PRECHARGE_EN {0}
 	# Disable DM/DBI since CoreDLA can't take advantage of these.
 	set_component_parameter_value CTRL_DM_EN {0}
 	set_component_parameter_value CTRL_ECC_AUTOCORRECT_EN {0}
-	set_component_parameter_value CTRL_PERFORMANCE_PROFILE {default}
 	set_component_parameter_value CTRL_RD_DBI_EN {0}
 	set_component_parameter_value CTRL_SCRAMBLER_EN {0}
 	set_component_parameter_value CTRL_WR_DBI_EN {0}
@@ -436,17 +434,11 @@ proc instantiate_emif {} {
 	set_component_parameter_value MEM_TCPDED_NS {5.0}
 	set_component_parameter_value MEM_TDQSCK_MAX_MIN_NS {0.16}
 	set_component_parameter_value MEM_TDQSCK_NS {0.0}
-	set_component_parameter_value MEM_TDQSS_CYC {0.0}
-	set_component_parameter_value MEM_TDSH_NS {0.225}
-	set_component_parameter_value MEM_TDSS_NS {0.225}
 	set_component_parameter_value MEM_TFAW_DLR_NS {20.0}
 	set_component_parameter_value MEM_TFAW_NS {25.0}
-	set_component_parameter_value MEM_TIH_NS {65000.0}
-	set_component_parameter_value MEM_TIS_NS {40000.0}
 	set_component_parameter_value MEM_TMOD_NS {30.0}
 	set_component_parameter_value MEM_TMPRR_NS {1.25}
 	set_component_parameter_value MEM_TMRD_NS {10.0}
-	set_component_parameter_value MEM_TQSH_NS {0.5}
 	set_component_parameter_value MEM_TRAS_MAX_NS {70200.0}
 	set_component_parameter_value MEM_TRAS_MIN_NS {32.0}
 	set_component_parameter_value MEM_TRAS_NS {32.0}
@@ -460,8 +452,6 @@ proc instantiate_emif {} {
 	set_component_parameter_value MEM_TRRD_L_NS {5.0}
 	set_component_parameter_value MEM_TRRD_S_NS {5.0}
 	set_component_parameter_value MEM_TRTP_NS {7.5}
-	set_component_parameter_value MEM_TWLH_NS {0.1625}
-	set_component_parameter_value MEM_TWLS_NS {0.1625}
 	set_component_parameter_value MEM_TWR_CRC_DM_NS {6.25}
 	set_component_parameter_value MEM_TWR_NS {15.0}
 	set_component_parameter_value MEM_TWTR_L_CRC_DM_NS {6.25}
@@ -522,7 +512,7 @@ proc instantiate_emif {} {
 
 proc instantiate_emif_clk_bridge {} {
 	upvar emif_clk_bridge emif_clk_bridge
-	add_component $emif_clk_bridge ip/ed_zero/ddr_usr_clk_bridge.ip altera_clock_bridge ddr_usr_clk_bridge 19.2.0
+	add_component $emif_clk_bridge ip/ed_zero/ddr_usr_clk_bridge.ip altera_clock_bridge ddr_usr_clk_bridge
 	load_component $emif_clk_bridge
 	set_component_parameter_value EXPLICIT_CLOCK_RATE {0.0}
 	set_component_parameter_value NUM_CLOCK_OUTPUTS {1}
@@ -532,7 +522,7 @@ proc instantiate_emif_clk_bridge {} {
 
 proc instantiate_shell_usr_clk_bridge {} {
 	upvar shell_usr_clk_bridge	shell_usr_clk_bridge
-	add_component $shell_usr_clk_bridge ip/ed_zero/ed_zero_usr_clock_bridge_0.ip altera_clock_bridge ed_zero_usr_clock_bridge_0 19.2.0
+	add_component $shell_usr_clk_bridge ip/ed_zero/ed_zero_usr_clock_bridge_0.ip altera_clock_bridge ed_zero_usr_clock_bridge_0
 	load_component $shell_usr_clk_bridge
 	set_component_parameter_value EXPLICIT_CLOCK_RATE {0.0}
 	set_component_parameter_value NUM_CLOCK_OUTPUTS {1}
@@ -542,7 +532,7 @@ proc instantiate_shell_usr_clk_bridge {} {
 
 proc instantiate_hw_timer_bridge {} {
 	upvar hw_timer_bridge hw_timer_bridge
-	add_component ${hw_timer_bridge} ip/ed_zero/ed_zero_hw_timer_bridge.ip mm_ccb ed_zero_hw_timer_bridge 19.3.0
+	add_component ${hw_timer_bridge} ip/ed_zero/ed_zero_hw_timer_bridge.ip mm_ccb ed_zero_hw_timer_bridge
 	load_component ${hw_timer_bridge}
 	set_component_parameter_value ADDRESS_UNITS {SYMBOLS}
 	set_component_parameter_value ADDRESS_WIDTH {8}
@@ -562,7 +552,7 @@ proc instantiate_hw_timer_bridge {} {
 
 proc instantiate_jtag_master {} {
 	upvar jtag_master jtag_master
-	add_component $jtag_master ip/ed_zero/ed_zero_master_0.ip altera_jtag_avalon_master master_0 19.1
+	add_component $jtag_master ip/ed_zero/ed_zero_master_0.ip altera_jtag_avalon_master master_0
 	load_component ${jtag_master}
 	set_component_parameter_value FAST_VER {0}
 	set_component_parameter_value FIFO_DEPTHS {2}
@@ -579,7 +569,7 @@ proc instantiate_pmon {} {
 	upvar pmon_inst pmon_inst
 	upvar emif_addr_width emif_addr_width
 	upvar emif_data_width emif_data_width
-	add_component $pmon_inst ip/ed_zero/ed_zero_pmon_0.ip pmon pmon_0 1.1.0
+	add_component $pmon_inst ip/ed_zero/ed_zero_pmon_0.ip pmon pmon_0
 	load_component $pmon_inst
 	set_component_parameter_value ALWAYS_RUN_FULL_COMPOSITION {0}
 	set_component_parameter_value EXPORT_JTAG {1}
@@ -625,7 +615,7 @@ proc instantiate_pmon {} {
 
 proc instantiate_reset_bridge {} {
 	upvar reset_bridge  reset_bridge
-	add_component $reset_bridge ip/ed_zero/ed_zero_reset_bridge_0.ip altera_reset_bridge reset_bridge_0 19.2.0
+	add_component $reset_bridge ip/ed_zero/ed_zero_reset_bridge_0.ip altera_reset_bridge reset_bridge_0
 	load_component $reset_bridge
 	set_component_parameter_value ACTIVE_LOW_RESET {1}
 	set_component_parameter_value NUM_RESET_OUTPUTS {1}
@@ -638,7 +628,7 @@ proc instantiate_reset_bridge {} {
 
 proc instantiate_reset_handler {} {
 	upvar reset_handler reset_handler
-	add_component $reset_handler ip/ed_zero/ed_zero_reset_handler.ip mem_reset_handler mem_reset_handler_inst 1.0.0
+	add_component $reset_handler ip/ed_zero/ed_zero_reset_handler.ip mem_reset_handler mem_reset_handler_inst
 	load_component $reset_handler
 	set_component_parameter_value CONDUIT_INVERT_0 {0}
 	set_component_parameter_value CONDUIT_INVERT_1 {0}
@@ -682,7 +672,7 @@ proc instantiate_reset_handler {} {
 
 proc instantiate_rrip {} {
 	upvar rrip rrip
-	add_component $rrip ip/ed_zero/ed_zero_rrip.ip altera_s10_user_rst_clkgate altera_s10_user_rst_clkgate_inst 19.4.8
+	add_component $rrip ip/ed_zero/ed_zero_rrip.ip altera_s10_user_rst_clkgate altera_s10_user_rst_clkgate_inst
 	load_component $rrip
 	set_component_parameter_value outputType {Reset Interface}
 	set_component_project_property HIDE_FROM_IP_CATALOG {false}
@@ -693,7 +683,7 @@ proc instantiate_dla_pll {} {
 	upvar dla_pll dla_pll
 	upvar user_ref_clk_freq_mhz user_ref_clk_freq_mhz
 	upvar dla_freq_mhz dla_freq_mhz
-	add_component $dla_pll ip/ed_zero/ed_zero_dla_pll.ip altera_iopll altera_iopll_inst 20.0.0
+	add_component $dla_pll ip/ed_zero/ed_zero_dla_pll.ip altera_iopll altera_iopll_inst
 	load_component ${dla_pll}
 	set_component_parameter_value gui_active_clk {0}
 	set_component_parameter_value gui_c_cnt_in_src0 {c_m_cnt_in_src_ph_mux_clk}
@@ -915,7 +905,7 @@ proc instantiate_dla_pll {} {
 proc instantiate_jtag_pll {} {
 	upvar jtag_pll jtag_pll
 	upvar user_ref_clk_freq_mhz user_ref_clk_freq_mhz
-	add_component ${jtag_pll} ip/ed_zero/ed_zero_jtag_pll.ip altera_iopll altera_iopll_inst 20.0.0
+	add_component ${jtag_pll} ip/ed_zero/ed_zero_jtag_pll.ip altera_iopll altera_iopll_inst
 	load_component ${jtag_pll}
 	set_component_parameter_value gui_active_clk {0}
 	set_component_parameter_value gui_c_cnt_in_src0 {c_m_cnt_in_src_ph_mux_clk}

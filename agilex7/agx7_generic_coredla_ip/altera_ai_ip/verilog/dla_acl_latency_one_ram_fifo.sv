@@ -116,21 +116,21 @@ module dla_acl_latency_one_ram_fifo #(
     //basic fifo configuration
     parameter int WIDTH,                        // width of the data path through the fifo
     parameter int DEPTH,                        // capacity of the fifo, at least 1
-    
+
     //occupancy
     parameter int ALMOST_EMPTY_CUTOFF = 0,      // almost_empty asserts if read_used_words <= ALMOST_EMPTY_CUTOFF, read_used_words increments when writes are visible on the read side, decrements when fifo is read
     parameter int ALMOST_FULL_CUTOFF = 0,       // almost_full asserts if write_used_words >= (DEPTH-ALMOST_FULL_CUTOFF), write_used_words increments when fifo is written to, decrements when fifo is read
     parameter int INITIAL_OCCUPANCY = 0,        // number of words in the fifo (write side occupancy) when it comes out of reset, note it still takes 5 clocks for this to become visible on the read side
-    
+
     //reset configuration
     parameter bit ASYNC_RESET = 0,              // how do we use reset: 1 means registers are reset asynchronously, 0 means registers are reset synchronously
     parameter bit SYNCHRONIZE_RESET = 1,        // based on how reset gets to us, what do we need to do: 1 means synchronize reset before consumption (if reset arrives asynchronously), 0 means passthrough (managed externally)
     parameter bit RESET_EVERYTHING = 0,         // intended for partial reconfig debug, set to 1 to reset every register (normally async reset excludes data path and sync reset additionally excludes some control signals)
     parameter bit RESET_EXTERNALLY_HELD = 1,    // set to 1 if resetn will be held for at least FOUR clock cycles, otherwise we will internally pulse stretch reset before consumption
-    
+
     //ram implementation
     parameter string RAM_BLOCK_TYPE = "FIFO_TO_CHOOSE", // "MLAB" | "M20K" | "FIFO_TO_CHOOSE" -> different implementations for MLAB vs M20K, so cannot let quartus decide in case MLAB or M20K is not explicitly specified
-    
+
     //special configurations for higher fmax / low area
     parameter int STALL_IN_EARLINESS = 0,       // how many clock cycles early is stall_in provided, fifo supports up to 2, setting this any higher results in registers to absorb the excess earliness
     parameter int VALID_IN_EARLINESS = 0,       // how many clock cycles early is valid_in provided, fifo can take advantage of 1 clock or valid_in earliness if stall_in is also at least 2 clocks early
@@ -138,48 +138,50 @@ module dla_acl_latency_one_ram_fifo #(
     parameter int VALID_IN_OUTSIDE_REGS = 0,    // number of registers on the valid-in path external to this module that will delay the propagation of x values on reset (e.g. in dla_hld_fifo)
     parameter int REGISTERED_DATA_OUT_COUNT = 0,// AT LEAST THIS MANY of the lower bits of data_out will be registered
     parameter bit NEVER_OVERFLOWS = 0,          // set to 1 to disable fifo's internal overflow protection, area savings by removing one incr/decr/thresh, stall_out still asserts during reset but won't mask valid_in
-    
+
     //special features that typically have an fmax penalty
     parameter bit HOLD_DATA_OUT_WHEN_EMPTY = 0, // 0 means data_out can be x when fifo is empty, 1 means data_out will hold last value when fifo is empty (scfifo behavior, has fmax penalty)
     parameter bit WRITE_AND_READ_DURING_FULL = 0,//set to 1 to allow writing and reading while the fifo is full, this may have an fmax penalty, to compensate it is recommended to use this with NEVER_OVERFLOWS = 1
-    
+
     //hidden parameters
     parameter int ZLRAM_RESET_RELEASE_DELAY_OVERRIDE = -1,  //DO NOT TOUCH, only dla_acl_latency_zero_ram_fifo should set this
-    
+
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY,
+
     //error correction code
     parameter enable_ecc = "FALSE"              // NOT IMPLEMENTED YET, see case:555783
 )
 (
     input  wire                 clock,
     input  wire                 resetn,         // see description above for different reset modes
-    
+
     //write interface
     input  wire                 valid_in,       // upstream advertises it has data, a write happens when valid_in & ~stall_out -- this needs to be early if VALID_IN_EARLINESS >= 1
     input  wire     [WIDTH-1:0] data_in,        // data from upstream
     output logic                stall_out,      // inform upstream that we cannot accept data
     output logic                almost_full,    // asserts if write_used_words >= (DEPTH-ALMOST_FULL_CUTOFF)
-    
+
     //read interface
     output logic                valid_out,      // advertise to downstream that we have data
     output logic    [WIDTH-1:0] data_out,       // data to downstream
     input  wire                 stall_in,       // downstream indicates it cannot accept data -- this needs to be early if STALL_IN_EARLINESS >= 1
     output logic                almost_empty,   // asserts if read_used_words <= ALMOST_EMPTY_CUTOFF
     output logic                forced_read_out,// indicates fifo is being read on current clock cycle, read data must be consumed or it will be lost, is a registered signal if STALL_IN_EARLINESS >= 1
-    
+
     //signals intended only for dla_acl_latency_zero_ram_fifo
     output logic                zlram_occ_gte_one_E,
     output logic                zlram_stall_out_E,
-    
+
     //other
     output logic          [1:0] ecc_err_status  // NOT IMPLEMENTED YET, see case:555783
 );
-    
+
     //////////////////////////////////////
     //                                  //
     //  Sanity check on the parameters  //
     //                                  //
     //////////////////////////////////////
-    
+
     // do not allow arbitrarily large amounts of earliness, as this delays the exit from reset "safe state"
     // the checks are done in Quartus pro and Modelsim, it is disabled in Quartus standard because it results in a syntax error (parser is based on an older systemverilog standard)
     // the workaround is to use synthesis translate to hide this from Quartus standard, ALTERA_RESERVED_QHD is only defined in Quartus pro, and Modelsim ignores the synthesis comment
@@ -196,28 +198,29 @@ module dla_acl_latency_one_ram_fifo #(
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(REGISTERED_DATA_OUT_COUNT >= 0 && REGISTERED_DATA_OUT_COUNT <= WIDTH, $sformatf("dla_acl_latency_one_ram_fifo: illegal value of REGISTERED_DATA_OUT_COUNT = %d, minimum allowed is 0, maximum allowed is WIDTH = %d\n", REGISTERED_DATA_OUT_COUNT, WIDTH))
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(STALL_IN_EARLINESS >= 0 && STALL_IN_EARLINESS <= 10, $sformatf("dla_acl_latency_one_ram_fifo: illegal value of STALL_IN_EARLINESS = %d, minimum allowed is 0, maximum allowed is 10\n", STALL_IN_EARLINESS))
         `DLA_ACL_PARAMETER_ASSERT_MESSAGE(VALID_IN_EARLINESS >= 0 && VALID_IN_EARLINESS <= 10, $sformatf("dla_acl_latency_one_ram_fifo: illegal value of VALID_IN_EARLINESS = %d, minimum allowed is 0, maximum allowed is 10\n", VALID_IN_EARLINESS))
-        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(VALID_IN_OUTSIDE_REGS >= 0 && VALID_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_high_speed_fifo: illegal value of VALID_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", VALID_IN_OUTSIDE_REGS))
-        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(STALL_IN_OUTSIDE_REGS >= 0 && STALL_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_high_speed_fifo: illegal value of STALL_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", STALL_IN_OUTSIDE_REGS))
+        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(VALID_IN_OUTSIDE_REGS >= 0 && VALID_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_latency_one_ram_fifo: illegal value of VALID_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", VALID_IN_OUTSIDE_REGS))
+        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(STALL_IN_OUTSIDE_REGS >= 0 && STALL_IN_OUTSIDE_REGS <= 1, $sformatf("dla_acl_latency_one_ram_fifo: illegal value of STALL_IN_OUTSIDE_REGS = %d, minimum allowed is 0, maximum allowed is 1\n", STALL_IN_OUTSIDE_REGS))
+        `DLA_ACL_PARAMETER_ASSERT_MESSAGE(DEVICE_FAMILY < dla_common_pkg::DEVICE_UNKNOWN , $sformatf("dla_acl_latency_one_ram_fifo: illegal value of DEVICE_FAMILY = %d\n", DEVICE_FAMILY))
     endgenerate
 
     `ifdef ALTERA_RESERVED_QHD
     `else
     //synthesis translate_on
     `endif
-    
-    
-    
+
+
+
     //////////////////////////
     //                      //
     //  Parameter settings  //
     //                      //
     //////////////////////////
-    
+
     // fifo configuration
     localparam int ADDR_RAW             = $clog2(DEPTH);
     localparam int ADDR                 = (ADDR_RAW < 2) ? 2 : ADDR_RAW;                                                            // minimum size of lfsr
     localparam bit USE_MLAB             = (RAM_BLOCK_TYPE == "MLAB") ? 1 : (RAM_BLOCK_TYPE == "M20K") ? 0 : (ADDR <= 5) ? 1 : 0;    //0 = mlab, 1 = m20k
-    
+
     // ram configuration
     localparam int PHYSICAL_MLAB_WIDTH  = 20;
     localparam int PHYSICAL_M20K_WIDTH  = (DEPTH <= 512) ? 40 : (DEPTH <= 1024) ? 20 : 10;              //this is accurate for s10 but conservative for a10
@@ -227,14 +230,14 @@ module dla_acl_latency_one_ram_fifo #(
     localparam int ADD_TO_REG_DATA_OUT  = ((LEFTOVER_UNREG + LEFTOVER_REG) <= PHYSICAL_RAM_WIDTH) ? LEFTOVER_UNREG : 0; //if all the leftovers fit within one full-width physical ram, pack them together
     localparam int REG_DATA_OUT_COUNT   = REGISTERED_DATA_OUT_COUNT + ADD_TO_REG_DATA_OUT;              //total number of data_out bits that will be registered
     localparam int UNREG_DATA_OUT_COUNT = WIDTH - REG_DATA_OUT_COUNT;                                   //total number of data_out bits that will be unregistered
-    
+
     // earliness configuration
     localparam int EARLY_MODE           = (STALL_IN_EARLINESS >= 1 && VALID_IN_EARLINESS >= 1) ? 1 : 0;
     localparam int EARLY_VALID          = EARLY_MODE;
     localparam int EXCESS_EARLY_VALID   = VALID_IN_EARLINESS - EARLY_VALID;
     localparam int EARLY_STALL          = EARLY_MODE;
     localparam int EXCESS_EARLY_STALL   = STALL_IN_EARLINESS - EARLY_STALL;
-    
+
     // reset timing
     localparam int EXCESS_EARLY_STALL_WITH_EXT = EXCESS_EARLY_STALL + STALL_IN_OUTSIDE_REGS;    //early stall is affected by regs outside this module; account for effect on reset timing
     localparam int EXCESS_EARLY_VALID_WITH_EXT = EXCESS_EARLY_VALID + VALID_IN_OUTSIDE_REGS;    //early valid is affected by regs outisde this module; account for effect on reset timing
@@ -246,30 +249,30 @@ module dla_acl_latency_one_ram_fifo #(
     localparam int RAW_RESET_DELAY      = FLUSH_EARLY_PIPES - RESET_LATENCY;                                                    // delay fifo exit from safe state if need more clocks to flush earliness than reset latency
     localparam int RESET_RELEASE_DELAY_PRE = (RAW_RESET_DELAY < MIN_RESET_DELAY) ? MIN_RESET_DELAY : RAW_RESET_DELAY;           // how many clocks late the fifo exits from safe state, excluding override from zlram
     localparam int RESET_RELEASE_DELAY  = (ZLRAM_RESET_RELEASE_DELAY_OVERRIDE != -1) ? ZLRAM_RESET_RELEASE_DELAY_OVERRIDE : RESET_RELEASE_DELAY_PRE;    // how many clocks late the fifo exits from safe state
-    
+
     // reset release delay for the various occupancy trackers
     localparam int RESET_DELAY_OCC_GTE3     = RESET_RELEASE_DELAY - EARLY_MODE;
     localparam int RESET_DELAY_STALL_OUT    = RESET_RELEASE_DELAY - EARLY_MODE;
     localparam int RESET_DELAY_ALMOST_FULL  = RESET_RELEASE_DELAY;
     localparam int RESET_DELAY_ALMOST_EMPTY = RESET_RELEASE_DELAY;
     localparam int RESET_DELAY_MAX          = RESET_RELEASE_DELAY;
-    
+
     // properties of the fifo which are consumed by the testbench
     localparam int WRITE_TO_READ_LATENCY            = 1;    //once something is written into the fifo, how many clocks later will it be visible on the read side
     localparam int RESET_EXT_HELD_LENGTH            = 4;    //if RESET_EXTERNALLY_HELD = 1, how many clocks does reset need to be held for
     localparam int MAX_CLOCKS_TO_ENTER_SAFE_STATE   = 2;    //upon assertion of reset, worse case number of clocks until fifo shows both full and empty
     localparam int MAX_CLOCKS_TO_EXIT_SAFE_STATE    = 18;   //upon release of reset, worse case number of clocks until fifo is ready to transact (not necessarily observable if INITIAL_OCCUPANCY = DEPTH)
-    
-    
-    
+
+
+
     ///////////////////////////
     //                       //
     //  Signal declarations  //
     //                       //
     ///////////////////////////
-    
+
     // Naming convention: some signals are retimed early, any signal ending with _E has the same earliness as the EARLY_MODE parameter.
-    
+
     //reset
     genvar g;
     logic aclrn, sclrn;                             //these are the typical active low reset signals that are consumed
@@ -277,58 +280,58 @@ module dla_acl_latency_one_ram_fifo #(
     logic [RESET_DELAY_MAX:0] resetn_delayed;       //delayed versions of aclrn or sclrn, consumed by the occupancy trackers
     logic fifo_in_reset;                            //intended primarily for consumption by testbench to know when fifo is in reset, also used for stall_out when NEVER_OVERFLOWS=1
     logic aclrn_occ_tracker, sclrn_occ_tracker;     //for reproducing the same reset structure that would be inside dla_acl_tessellated_incr_decr_threshold
-    
+
     //retime stall_in and valid_in to the correct timing, absorb excess earliness that the fifo cannot take advantage of
     logic stall_in_E, valid_in_E;
     logic [EXCESS_EARLY_STALL:0] stall_in_pipe;
     logic [EXCESS_EARLY_VALID:0] valid_in_pipe;
-    
+
     //write control
     logic write_into_fifo, write_into_fifo_E;           //are we writing into the fifo
     logic try_write_into_fifo, try_write_into_fifo_E;   //are we trying to write into fifo, not necessarily will write, the purpose of this is to shrink the logic cone of threshold_reached in occ trackers
     logic advance_write_addr, advance_write_addr_E;     //should the write address advance
     logic ram_wr_en, ram_wr_en_E;                       //write enable to the m20k or mlab
     logic [ADDR-1:0] ram_wr_addr;                       //write address to the m20k or mlab
-    
+
     //read control
     logic read_from_fifo, read_from_fifo_E;             //are we reading from the fifo
     logic try_read_from_fifo, try_read_from_fifo_E;     //are we trying to read from fifo, not necessarily will read
     logic advance_read_addr_E;                          //should the read address advance...
     logic m20k_addr_b_clock_en, lfsr_addr_b_incr;       //...normally we should also propagate this to the m20k read address and lfsr read address, there is a special scenario during reset exit, see comments below
     logic [ADDR-1:0] ram_rd_addr;                       //read address to the m20k or mlab
-    
+
     //emptiness tracking - many cases to consider for how to use the data bypass for low latency
     logic occ_gte_one_E, occ_gte_two_E, occ_gte_three_E;    //used_words >= 1,2,3
     logic occ_gte_reset_exit_n, occ_gte_one_reset_exit_n, occ_gte_two_reset_exit_n; //occ_gte_three_E uses occupancy tracking, use occ encoding from dla_acl_low_latency_fifo for others, need the re-create same reset logic
     logic valid_out_E, stall_out_E;                     //early valid out and early stall out
-    
+
     //data bypass
     logic [WIDTH-1:0] ram_data_out;                     //read data output from m20k or mlab, can be registered or unregistered or some mix of the two depending on REGISTERED_DATA_OUT_COUNT
     logic [WIDTH-1:0] data_in_prev;                     //data_in delayed by 1 clock cycle, used exactly as in the diagram in the comments at the top
     logic [WIDTH-1:0] data_in_mux;                      //for unregistered data_out, shift some of the muxing earlier, used exactly as in the diagram in the comments at the top
     logic [WIDTH-1:0] data_out_reg, data_out_unreg;     //we compute data_out for registered and unregistered version, then data_out is just a bit select from these based on REGISTERED_DATA_OUT_COUNT
-    
+
     //control signals for data bypass
     logic data_out_clock_en, data_out_clock_en_E;       //if data_out is registered this is the clock enable for it, otherwise this is the clock enable for the read data register inside the m20k/mlab itself
     logic sel_data_in;                                  //data_out should load from data_in when the fifo is empty
     logic sel_ram_data_out;                             //if data was written long enough ago and is now readable from the ram, use that data
     logic sel_new_data, sel_new_data_E;                 //use data_in_prev when the fifo is not empty but data is not yet readable from the ram
-    
-    
-    
+
+
+
     /////////////
     //         //
     //  Reset  //
     //         //
     /////////////
-    
+
     // the reset structure is identical to dla_acl_mid_speed_fifo
-    
+
     // S10 reset specification:
     // S (clocks to enter reset safe state) : 2 for sclrn_early_two to actual register (beware synchronizer takes no time for reset assertion, but it does take time for reset release)
     // P (minimum duration of reset pulse)  : 4 if RESET_EXTERNALLY_HELD = 1, otherwise 1 (we will internally pulse stretch the reset to 4 clocks)
     // D (clocks to exit reset safe state)  : 18 (3 for synchronizer) + (5 for sclrn_early_two to actual register) + (10 for reset release delay for registers that absorb excess earliness)
-    
+
     dla_acl_reset_handler
     #(
         .ASYNC_RESET            (ASYNC_RESET),
@@ -345,7 +348,7 @@ module dla_acl_latency_one_ram_fifo #(
         .o_resetn_synchronized  (),
         .o_sclrn                (sclrn_early_two)
     );
-    
+
     generate
     if (ASYNC_RESET) begin : async_reset
         assign sclrn = 1'b1;
@@ -362,7 +365,7 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
+
     generate
     always_comb begin
         resetn_delayed[0] = (ASYNC_RESET) ? aclrn : sclrn;      //delay 0 = original reset timing
@@ -377,7 +380,7 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
+
     //this signal is consumed by the testbench to know whether the fifo is still in reset, can't use stall_out when fifo starts as full
     //this signal may be exported by the fifo in certain configurations, e.g. NEVER_OVERFLOWS=1
     always_ff @(posedge clock or negedge aclrn) begin
@@ -387,15 +390,15 @@ module dla_acl_latency_one_ram_fifo #(
             if (~resetn_delayed[RESET_RELEASE_DELAY]) fifo_in_reset <= 1'b1;
         end
     end
-    
-    
-    
+
+
+
     ////////////////////////////////////////////////
     //                                            //
     //  Absorb excess earliness on input signals  //
     //                                            //
     ////////////////////////////////////////////////
-    
+
     generate
     always_comb begin
         stall_in_pipe[0] = stall_in;
@@ -422,30 +425,30 @@ module dla_acl_latency_one_ram_fifo #(
     endgenerate
     assign stall_in_E = stall_in_pipe[EXCESS_EARLY_STALL];
     assign valid_in_E = valid_in_pipe[EXCESS_EARLY_VALID];
-    
-    
-    
+
+
+
     ////////////////////
     //                //
     //  Memory block  //
     //                //
     ////////////////////
-    
+
     // We can use a mix of registered and unregistered output data, see comments at the top for how this is handled.
     // Just like dla_acl_mid_speed_fifo, we have different implementations for M20K and MLAB. Comments from dla_acl_mid_speed_fifo about this:
-    
+
     // Usage of altdpram - unlike the M20K in which it is impossible to bypass the input registers (addresses, write data, write enable), for the MLAB it is possible to bypass the input
     // register for the read address. There is no parameterization of altera_syncram that supports this, hence the use of altdpram.
-    
+
     // It is desirable to have access to the output of read address address. In the case of MLAB, the read address is driven by ALM registers. For M20K, we have no visibility on the output
     // of the read address register because this is a hardened register inside the M20K itself. For M20K we have our own read address in ALM registers which is always 1 ahead of the hardened
     // read address inside the M20K. Only when we update our read address, we assert the clock enable for the hardened read address inside the M20K, this way it always captures 1 value behind
     // what our ALM register read address is. For asynchronous reset, the M20K read address is aclr to 0 and our address starts at 1 (actually INITIAL_OCCPUPANCY=1 on the LFSR). For synchronous
     // reset, the M20K read address clock enable is active during reset so that we can clock in the value of our ALM register read address, upon reset exit the M20K clock enable is shut off
     // and our read address advances 1 step forward.
-    
+
     assign ecc_err_status = 2'h0;   // ECC IS NOT IMPLEMENTED YET, see case:555783
-    
+
     generate
     if (USE_MLAB) begin : gen_mlab
         if (REG_DATA_OUT_COUNT > 0) begin : gen_mlab_reg
@@ -476,17 +479,17 @@ module dla_acl_latency_one_ram_fifo #(
                 //clock, no reset
                 .inclock    (clock),
                 .outclock   (clock),
-                
+
                 //write port
                 .data       (data_in[REG_DATA_OUT_COUNT-1:0]),      //the lower bits of data_out are registered
                 .wren       (ram_wr_en),
                 .wraddress  (ram_wr_addr),
-                
+
                 //read port
                 .rdaddress  (ram_rd_addr),
                 .outclocken (1'b1),                                 //no effect since q is unregistered
                 .q          (ram_data_out[REG_DATA_OUT_COUNT-1:0]), //the lower bits of data_out are registered
-                
+
                 //unused
                 .aclr (1'b0),
                 .sclr (1'b0),
@@ -525,17 +528,17 @@ module dla_acl_latency_one_ram_fifo #(
                 //clock, no reset
                 .inclock    (clock),
                 .outclock   (clock),
-                
+
                 //write port
                 .data       (data_in[WIDTH-1:REG_DATA_OUT_COUNT]),      //the upper bits of data_out are unregistered
                 .wren       (ram_wr_en),
                 .wraddress  (ram_wr_addr),
-                
+
                 //read port
                 .rdaddress  (ram_rd_addr),
                 .outclocken (data_out_clock_en),                        //q is registered and we need access to its clock enable
                 .q          (ram_data_out[WIDTH-1:REG_DATA_OUT_COUNT]), //the upper bits of data_out are unregistered
-                
+
                 //unused
                 .aclr (1'b0),
                 .sclr (1'b0),
@@ -552,7 +555,7 @@ module dla_acl_latency_one_ram_fifo #(
             altera_syncram #(   //modelsim library: altera_lnsim
                 .numwords_a (2**ADDR),
                 .numwords_b (2**ADDR),
-                .address_aclr_b ((ASYNC_RESET) ? "CLEAR1" : "NONE"),
+                .address_aclr_b ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? "CLEAR1" : "NONE"),
                 .address_reg_b ("CLOCK1"),
                 .clock_enable_input_a ("BYPASS"),
                 .clock_enable_input_b ("BYPASS"),
@@ -578,19 +581,19 @@ module dla_acl_latency_one_ram_fifo #(
                 //clock and reset
                 .clock0         (clock),
                 .clock1         (clock),
-                .aclr1          ((ASYNC_RESET) ? ~aclrn : 1'b0),        //this is used to reset the internal address_b when ASYNC_RESET=1
-                
+                .aclr1          ((ASYNC_RESET) ? ~aclrn : ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? ~sclrn : 1'b0)),        //this is used to reset the internal address_b when ASYNC_RESET=1
+
                 //write port
                 .wren_a         (ram_wr_en),
                 .address_a      (ram_wr_addr),
                 .data_a         (data_in[REG_DATA_OUT_COUNT-1:0]),      //the lower bits of data_out are registered
-                
+
                 //read port
                 .address_b      (ram_rd_addr),
                 .addressstall_b (~m20k_addr_b_clock_en),
                 .clocken1       (1'b1),                                 //no effect since q is unregistered
                 .q_b            (ram_data_out[REG_DATA_OUT_COUNT-1:0]), //the lower bits of data_out are registered
-                
+
                 //unused
                 .aclr0 (1'b0),
                 .address2_a (1'b1),
@@ -616,7 +619,7 @@ module dla_acl_latency_one_ram_fifo #(
             altera_syncram #(   //modelsim library: altera_lnsim
                 .numwords_a (2**ADDR),
                 .numwords_b (2**ADDR),
-                .address_aclr_b ((ASYNC_RESET) ? "CLEAR1" : "NONE"),
+                .address_aclr_b ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? "CLEAR1" : "NONE"),
                 .address_reg_b ("CLOCK1"),
                 .clock_enable_input_a ("BYPASS"),
                 .clock_enable_input_b ("BYPASS"),
@@ -642,19 +645,19 @@ module dla_acl_latency_one_ram_fifo #(
                 //clock and reset
                 .clock0         (clock),
                 .clock1         (clock),
-                .aclr1          ((ASYNC_RESET) ? ~aclrn : 1'b0),    //this is used to reset the internal address_b when ASYNC_RESET=1
-                
+                .aclr1          ((ASYNC_RESET) ? ~aclrn : ((DEVICE_FAMILY != dla_common_pkg::DEVICE_S10) ? ~sclrn : 1'b0)),    //this is used to reset the internal address_b when ASYNC_RESET=1
+
                 //write port
                 .wren_a         (ram_wr_en),
                 .address_a      (ram_wr_addr),
                 .data_a         (data_in[WIDTH-1:REG_DATA_OUT_COUNT]),      //the upper bits of data_out are unregistered
-                
+
                 //read port
                 .address_b      (ram_rd_addr),
                 .addressstall_b (~m20k_addr_b_clock_en),
                 .clocken1       (data_out_clock_en),                        //q is registered and we need access to its clock enable
                 .q_b            (ram_data_out[WIDTH-1:REG_DATA_OUT_COUNT]), //the upper bits of data_out are unregistered
-                
+
                 //unused
                 .aclr0 (1'b0),
                 .address2_a (1'b1),
@@ -678,21 +681,21 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
-    
-    
+
+
+
     /////////////////////
     //                 //
     //  Write address  //
     //                 //
     /////////////////////
-    
+
     assign advance_write_addr_E = ~stall_out_E & valid_in_E & (occ_gte_two_E | (valid_out_E & stall_in_E)); //don't write to fifo if data captured persistently in the data bypass (data_out if registered, otherwise data_in_mux)
     assign ram_wr_en_E = ~stall_out_E & valid_in_E;     //simplify the write logic, this allows more writes than absolutely necessary in order to ease routing to the write enable of all the physical memories
-    
+
     assign try_write_into_fifo_E = valid_in_E;
     assign write_into_fifo_E = valid_in_E & ~stall_out_E;
-    
+
     generate
     if (EARLY_MODE == 0) begin : write_incr0
         assign ram_wr_en = ram_wr_en_E;
@@ -721,7 +724,7 @@ module dla_acl_latency_one_ram_fifo #(
         assign try_write_into_fifo = write_into_fifo;
     end
     endgenerate
-    
+
     dla_acl_lfsr #(
         .WIDTH                  (ADDR),
         .ASYNC_RESET            (ASYNC_RESET),
@@ -735,23 +738,23 @@ module dla_acl_latency_one_ram_fifo #(
         .enable                 (advance_write_addr),
         .state                  (ram_wr_addr)
     );
-    
-    
-    
+
+
+
     ////////////////////
     //                //
     //  Read address  //
     //                //
     ////////////////////
-    
+
     // Like dla_acl_mid_speed_fifo, for M20K with synchronous reset we have special logic for clocking in our ALM register read address into the hardened read address inside the M20K itself. See comments there for how this works.
-    
+
     assign advance_read_addr_E = occ_gte_two_E & ~stall_in_E;   //if we didn't write incoming data into the ram, also don't try to read it from the ram
-    
+
     generate
     if (EARLY_MODE == 0) begin : read_incr0
-        assign lfsr_addr_b_incr     = (!USE_MLAB && !ASYNC_RESET) ? (advance_read_addr_E | ~sclrn_late) : advance_read_addr_E;
-        assign m20k_addr_b_clock_en = (!USE_MLAB && !ASYNC_RESET) ? (advance_read_addr_E | ~sclrn)      : advance_read_addr_E;
+        assign lfsr_addr_b_incr     = (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? (advance_read_addr_E | ~sclrn_late) : advance_read_addr_E;
+        assign m20k_addr_b_clock_en = (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? (advance_read_addr_E | ~sclrn)      : advance_read_addr_E;
     end
     if (EARLY_MODE == 1) begin : read_incr1
         always_ff @(posedge clock or negedge aclrn) begin
@@ -762,7 +765,7 @@ module dla_acl_latency_one_ram_fifo #(
             else begin
                 lfsr_addr_b_incr <= advance_read_addr_E;
                 m20k_addr_b_clock_en <= advance_read_addr_E;
-                if (!USE_MLAB && !ASYNC_RESET) begin    //special reset behavior for M20K using sync reset, peek one stage ahead on sclr since we are now registering these signals
+                if (!USE_MLAB && !ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) begin    //special reset behavior for M20K using sync reset, peek one stage ahead on sclr since we are now registering these signals
                     if (~sclrn) lfsr_addr_b_incr <= 1'b1;
                     if (~sclrn_early) m20k_addr_b_clock_en <= 1'b1;
                 end
@@ -776,12 +779,12 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
+
     dla_acl_lfsr #(
         .WIDTH                  (ADDR),
         .ASYNC_RESET            (ASYNC_RESET),
         .SYNCHRONIZE_RESET      (0),
-        .INITIAL_OCCUPANCY      ((!USE_MLAB && ASYNC_RESET) ? 1 : 0)    //for M20K our read address is 1 ahead of the address_b inside the M20K, for async reset we don't clock our address during reset, so just start 1 ahead
+        .INITIAL_OCCUPANCY      ((!USE_MLAB && ASYNC_RESET && DEVICE_FAMILY == dla_common_pkg::DEVICE_S10) ? 1 : 0)    //for M20K our read address is 1 ahead of the address_b inside the M20K, for async reset we don't clock our address during reset, so just start 1 ahead
     )
     m20k_rdaddr_inst
     (
@@ -790,15 +793,15 @@ module dla_acl_latency_one_ram_fifo #(
         .enable                 (lfsr_addr_b_incr),
         .state                  (ram_rd_addr)
     );
-    
-    
-    
+
+
+
     //////////////////////////
     //                      //
     //  Emptiness tracking  //
     //                      //
     //////////////////////////
-    
+
     // occ_gte_X checks whether used_words >= X. For a latency one fifo, write_used_words == read_used_words. We use the same encoding of occ from dla_acl_low_latency_fifo:
     //
     // Let occ[2:0] = {occ_gte_three_E, occ_gte_two_E, occ_gte_one_E}
@@ -814,7 +817,7 @@ module dla_acl_latency_one_ram_fifo #(
     // fifos where things get a bit complicated with INITIAL_OCCUPANCY and WRITE_AND_READ_DURING_FULL. Ideally all 3 occ_gte_X signals should share the same reset, but since occ_gte_three_E is driven from an
     // occupancy tracker, we need to re-create the same reset control that the occupancy tracker would have used, which is commonized in occ_gte_reset_exit_n, and depending on INITIAL_OCCUPANCY we adjust the actual
     // reset that occ_gte_two_E and occ_gte_one_E consume.
-    
+
     //mimic the reset behavior inside dla_acl_tessellated_incr_decr_threshold -- in case THRESHOLD_REACHED_AT_RESET is different than the ideal value, we need a way to restore the ideal value at reset exit
     assign aclrn_occ_tracker =  (ASYNC_RESET) ? resetn_delayed[RESET_DELAY_OCC_GTE3] : 1'b1;
     assign sclrn_occ_tracker = (!ASYNC_RESET) ? resetn_delayed[RESET_DELAY_OCC_GTE3] : 1'b1;
@@ -824,7 +827,7 @@ module dla_acl_latency_one_ram_fifo #(
     end
     assign occ_gte_one_reset_exit_n = (INITIAL_OCCUPANCY == 0) ? 1'b1 : occ_gte_reset_exit_n;
     assign occ_gte_two_reset_exit_n = (INITIAL_OCCUPANCY <= 1) ? 1'b1 : occ_gte_reset_exit_n;
-    
+
     always_ff @(posedge clock or negedge aclrn_occ_tracker) begin
         if (~aclrn_occ_tracker) occ_gte_one_E <= 1'b0;
         else begin
@@ -840,7 +843,7 @@ module dla_acl_latency_one_ram_fifo #(
             if (~sclrn_occ_tracker) occ_gte_one_E <= 1'b0;
         end
     end
-    
+
     generate
     if (DEPTH >= 2) begin : gen_occ_gte_two_E
         always_ff @(posedge clock or negedge aclrn_occ_tracker) begin
@@ -857,7 +860,7 @@ module dla_acl_latency_one_ram_fifo #(
         assign occ_gte_two_E = 1'b0;
     end
     endgenerate
-    
+
     generate
     if (DEPTH >= 3) begin : gen_occ_gte_three_E
         localparam bit OCC_GTE3_GUARD_INCR_RAW = (INITIAL_OCCUPANCY == 2) ? 1'b1 : 1'b0;    //same problem as almost_full but in the opposite direction (valid_in=1 during reset)
@@ -887,13 +890,13 @@ module dla_acl_latency_one_ram_fifo #(
         assign occ_gte_three_E = 1'b0;
     end
     endgenerate
-    
+
     //read logic
     assign valid_out_E = occ_gte_one_E;
     assign try_read_from_fifo_E = ~stall_in_E;
     assign read_from_fifo_E = valid_out_E & ~stall_in_E;
     assign forced_read_out = read_from_fifo;
-    
+
     //correct timing to no earliness
     generate
     if (EARLY_MODE == 0) begin : read0
@@ -919,15 +922,15 @@ module dla_acl_latency_one_ram_fifo #(
         assign try_read_from_fifo = read_from_fifo;
     end
     endgenerate
-    
-    
-    
+
+
+
     ///////////////////////////////////
     //                               //
     //  Data bypass for low latency  //
     //                               //
     ///////////////////////////////////
-    
+
     //data_out_clock_en is the clock enable for data_out when registered, otherwise it is clock enable for the read data register inside the M20K or MLAB itself
     //note that both scenarios can be used at the same time if REGISTERED_DATA_OUT_COUNT results in some bits of data_out being registered and some being unregistered
     //normally data_out should load if the fifo is empty or downstream says it can accept data, things get complicated when we must hold the last value when the fifo empties
@@ -943,7 +946,7 @@ module dla_acl_latency_one_ram_fifo #(
         assign data_out_clock_en_E = empty_and_writing_E | one_item_and_writing_and_reading_E | two_or_more_items_and_reading_E;
     end
     endgenerate
-    
+
     //sel_data_in means data_out should source from data_in, which happens when the fifo is empty, or there is 1 word and we are reading and writing
     //sel_new_data means data_out should source from data_in_prev -- this is essentially the new data mode discussed in the comments at the top which is used to lower the write to latency from 3 to 2
     //in all other scenarios, data_out should source from the ram read data
@@ -954,7 +957,7 @@ module dla_acl_latency_one_ram_fifo #(
             if (~sclrn && RESET_EVERYTHING) sel_new_data_E <= 1'b0;
         end
     end
-    
+
     //correct timing to no earliness -- control signal operate with earliness but the data path itself does not, this gives time for the control signals to fan-out to the entire data path width
     generate
     if (EARLY_MODE == 0) begin : data0
@@ -982,7 +985,7 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
+
     //data path for both registered and unregistered data_out
     always_ff @(posedge clock or negedge aclrn) begin
         if (~aclrn) begin
@@ -1007,7 +1010,7 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     assign data_out_unreg = (sel_ram_data_out) ? ram_data_out : data_in_mux;
-    
+
     //select whether to use registered or unregistered data_out
     generate
     if (REG_DATA_OUT_COUNT == 0) begin : gen_unregistered_data_out
@@ -1020,15 +1023,15 @@ module dla_acl_latency_one_ram_fifo #(
         assign data_out = {data_out_unreg[WIDTH-1:REG_DATA_OUT_COUNT], data_out_reg[REG_DATA_OUT_COUNT-1:0]};
     end
     endgenerate
-    
-    
-    
+
+
+
     /////////////////
     //             //
     //  Fifo full  //
     //             //
     /////////////////
-    
+
     generate
     if (NEVER_OVERFLOWS) begin : gen_reset_stall_out    //no overflow protection, but upstream still needs a way to know when fifo has exited from reset
         if (EARLY_MODE == 0) begin : fifo_in_reset0
@@ -1071,7 +1074,7 @@ module dla_acl_latency_one_ram_fifo #(
         assign stall_out_E = (!WRITE_AND_READ_DURING_FULL) ? stall_out_E_raw : (stall_out_E_raw & ~read_from_fifo_E);
     end
     endgenerate
-    
+
     //correct timing to no earliness
     generate
     if (EARLY_MODE == 0) begin : stall_out0
@@ -1087,15 +1090,15 @@ module dla_acl_latency_one_ram_fifo #(
         end
     end
     endgenerate
-    
-    
-    
+
+
+
     ///////////////////
     //               //
     //  Almost full  //
     //               //
     ///////////////////
-    
+
     generate
     if ((ALMOST_FULL_CUTOFF == 0) && (NEVER_OVERFLOWS == 0) && (WRITE_AND_READ_DURING_FULL == 0)) begin : full_almost_full
         assign almost_full = stall_out;
@@ -1125,15 +1128,15 @@ module dla_acl_latency_one_ram_fifo #(
         );
     end
     endgenerate
-    
-    
-    
+
+
+
     ////////////////////
     //                //
     //  Almost empty  //
     //                //
     ////////////////////
-    
+
     generate
     if (ALMOST_EMPTY_CUTOFF == 0) begin : empty_almost_empty
         assign almost_empty = ~valid_out;
@@ -1179,18 +1182,18 @@ module dla_acl_latency_one_ram_fifo #(
         assign almost_empty = ~not_almost_empty;
     end
     endgenerate
-    
-    
-    
+
+
+
     //////////////////////////////////////////////////////////
     //                                                      //
     //  Export signals needed by dla_acl_latency_zero_ram_fifo  //
     //                                                      //
     //////////////////////////////////////////////////////////
-    
+
     assign zlram_occ_gte_one_E = occ_gte_one_E;
     assign zlram_stall_out_E = stall_out_E;
-    
+
 endmodule
 
 `default_nettype wire

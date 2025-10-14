@@ -55,7 +55,8 @@ module dla_hld_lsu_burst_coalescer #(
     parameter int M20K_NARROW_FIFO_DEPTH,       //if we need a deep fifo but the data path is narrow e.g. up to 10 bits which is the narrowest M20K on S10, can get additional depth for without needing more M20K
     parameter int BURST_COAL_MAX_TIMEOUT_BIT,   //limit how large the dynamic timeout threshold can get inside burst coalescer
     parameter bit USE_AXI,                      //0 = use AvalonMM, 1 = use AXI, this affects how the burstcount is constructed
-    parameter int ADDR_ADAPT_WIDTH              //if width adaption is done on the global memory interface, how many word address LSBs are needed in AXI write data channel to indicate how to width adapt
+    parameter int ADDR_ADAPT_WIDTH,             //if width adaption is done on the global memory interface, how many word address LSBs are needed in AXI write data channel to indicate how to width adapt
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY
 ) (
     input  wire                         clock,
     input  wire                         resetn,
@@ -389,7 +390,8 @@ module dla_hld_lsu_burst_coalescer #(
                 .ALMOST_FULL_CUTOFF (REPEAT_FIFO_ALMOST_FULL_CUTOFF),
                 .ASYNC_RESET        (ASYNC_RESET),
                 .SYNCHRONIZE_RESET  (0),
-                .STYLE              ("ms")
+                .STYLE              ("ms"),
+                .DEVICE_FAMILY      (DEVICE_FAMILY)
             )
             repeat_fifo_inst
             (
@@ -552,7 +554,8 @@ module dla_hld_lsu_burst_coalescer #(
                 .ALMOST_FULL_CUTOFF (AVM_CTRL_FIFO_ALMOST_FULL_CUTOFF),
                 .ASYNC_RESET        (ASYNC_RESET),
                 .SYNCHRONIZE_RESET  (0),
-                .STYLE              ("ms")
+                .STYLE              ("ms"),
+                .DEVICE_FAMILY      (DEVICE_FAMILY)
             )
             axi_last_fifo_inst
             (
@@ -583,7 +586,8 @@ module dla_hld_lsu_burst_coalescer #(
             .ALMOST_FULL_CUTOFF (AVM_CTRL_FIFO_ALMOST_FULL_CUTOFF),
             .ASYNC_RESET        (ASYNC_RESET),
             .SYNCHRONIZE_RESET  (0),
-            .STYLE              ("ms")
+            .STYLE              ("ms"),
+            .DEVICE_FAMILY      (DEVICE_FAMILY)
         )
         avm_ctrl_fifo_inst
         (

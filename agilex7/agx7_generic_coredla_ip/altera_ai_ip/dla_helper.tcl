@@ -171,6 +171,61 @@ proc add_rstn { name clk } {
 
 ###################################################################################
 #
+# INPUT STREAMING
+#
+###################################################################################
+proc dla_add_axi4streaming_slave_interface { prefix clk rst }  {
+  
+  set direction "end"
+
+  # align with Omnitek naming standard
+  set parameter_prefix "[string toupper $prefix]"
+
+  # refer to parameters set in core_hw.tcl
+  set data_width ${parameter_prefix}_DATA_WIDTH
+  
+  ######################################################################################
+  add_interface $prefix axi4stream $direction
+  set_interface_property $prefix associatedClock $clk
+  set_interface_property $prefix associatedReset $rst
+
+  add_interface_port $prefix istream_axi_t_data tdata Input $data_width
+  add_interface_port $prefix istream_axi_t_valid tvalid Input 1
+  add_interface_port $prefix istream_axi_t_ready tready Output 1
+  
+}
+
+###################################################################################
+#
+# OUTPUT STREAMING
+#
+###################################################################################
+proc dla_add_axi4streaming_master_interface { prefix clk rst }  {
+
+  set direction "start"
+
+  # align with Omnitek naming standard
+  set parameter_prefix "[string toupper $prefix]"
+
+  # refer to parameters set in core_hw.tcl
+  set data_width ${parameter_prefix}_DATA_WIDTH
+  
+  ######################################################################################
+  add_interface $prefix axi4stream $direction
+  set_interface_property $prefix associatedClock $clk
+  set_interface_property $prefix associatedReset $rst
+
+  add_interface_port $prefix ostream_axi_t_data tdata Output $data_width
+  add_interface_port $prefix ostream_axi_t_valid tvalid Output 1
+  add_interface_port $prefix ostream_axi_t_ready tready Input 1
+  add_interface_port $prefix ostream_axi_t_last tlast Output 1
+  add_interface_port $prefix ostream_axi_t_strb tstrb Output ($data_width/8)
+
+}
+
+
+###################################################################################
+#
 #
 #
 ###################################################################################

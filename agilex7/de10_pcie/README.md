@@ -18,12 +18,12 @@ uses the `AGX7_Generic.arch` architecture.
 > not done.
 >
 > Please refer to the
-> [Installing the FPGA AI Suite PCIe-Based Design Example Prerequisites](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/installing-the-pcie-based-design-example.html)
-> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/getting-started-guide.html)
+> [Installing the FPGA AI Suite PCIe-Based Design Example Prerequisites](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-the-pcie-based-design-example.html)
+> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html)
 > for the setup instructions.
 
-* AI Suite 2025.1
-* Quartus Prime 25.1
+* AI Suite 2025.3
+* Quartus Prime 25.3
     * Agilex 7 device support
     * Agilex common files
 * OpenVINO 2024.6.0 Runtime
@@ -40,7 +40,7 @@ Compile the Quartus project with
 ```bash
 # Enable the OpenVINO and the AI Suite environments
 source /opt/intel/openvino_2024.6.0/setupvars.sh
-source /opt/altera/fpga_ai_suite_2025.1/dla/setupvars.sh
+source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
 
 # Prepare and compile the Quartus project.
 cd $EXAMPLES_PATH/agilex7/de10_pcie
@@ -53,12 +53,18 @@ quartus_sh -t generate_sof.tcl
 The `generate_sof.tcl` script can also be run through the Quartus GUI directly.
 The bitstream file, `flat.sof`, will be located in
 `$EXAMPLES_PATH/agilex7/de10_pcie/flat.sof`.
+> [!NOTE]
+> You must also export the Quartus license, QUARTUS_ROOTDIR, quartus and qsys environment variables to your PATH.
+> Please refer to the [Installing Quartus Prime Pro Edition Software](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-software.html)
+> and the [Additional Software Prerequisites for the PCIe-based Design Example](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/additional-software-prerequisites-for.html)
+> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html)
+> for the setup instructions.
 
 ## Running Inference
 
 > [!NOTE]
 > This is a condensed version of the
-> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/quick-start-tutorial.html).
+> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/quick-start-tutorial.html).
 > If you're using a pre-compiled bitstream then replace any paths to
 > `flat.sof` with the location where you saved
 > `agx7_de10_pcie.sof`.
@@ -100,7 +106,7 @@ omz_converter --name resnet-50-tf --download_dir ../models --output_dir ../model
 >
 > ```shell
 > source /opt/intel/openvino_2024.6.0/setupvars.sh
-> source /opt/altera/fpga_ai_suite_2025.1/dla/setupvars.sh
+> source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
 > ```
 
 We will now run inference with this model.  It is located in

@@ -80,6 +80,7 @@ module dla_acl_latency_zero_ram_fifo #(
     parameter bit HOLD_DATA_OUT_WHEN_EMPTY = 0, // 0 means data_out can be x when fifo is empty, 1 means data_out will hold last value when fifo is empty (scfifo behavior, has fmax penalty)
     parameter bit WRITE_AND_READ_DURING_FULL = 0,//set to 1 to allow writing and reading while the fifo is full, this may have an fmax penalty, to compensate it is recommended to use this with NEVER_OVERFLOWS = 1
     
+    parameter dla_common_pkg::device_family_t DEVICE_FAMILY,
     //error correction code
     parameter enable_ecc = "FALSE"              // NOT IMPLEMENTED YET, see case:555783
 )
@@ -340,6 +341,7 @@ module dla_acl_latency_zero_ram_fifo #(
         .HOLD_DATA_OUT_WHEN_EMPTY       (0),
         .WRITE_AND_READ_DURING_FULL     (WRITE_AND_READ_DURING_FULL),
         .ZLRAM_RESET_RELEASE_DELAY_OVERRIDE(RESET_RELEASE_DELAY),   //...but if valid_in or stall_in are very early, we still need the fifo to exit from reset safe state later than usual
+        .DEVICE_FAMILY                  (DEVICE_FAMILY),
         .enable_ecc                     (enable_ecc)
     )
     llram_fifo_inst

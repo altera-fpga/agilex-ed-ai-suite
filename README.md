@@ -20,13 +20,13 @@ You may obtain a copy of the FPGA AI Suite from the
 > [!IMPORTANT]
 > All examples have a hard limit of 10'000 inference requests.  Please
 > refer to the documentation on
-> ["--licensed/--unlicensed" IP generation](https://www.intel.com/content/www/us/en/docs/programmable/768974/2025-1/ip-generation-utility-command-line-options.html)
+> ["--licensed/--unlicensed" IP generation](https://www.intel.com/content/www/us/en/docs/programmable/768974/2025-3/ip-generation-utility-command-line-options.html)
 > for details about this limitation.
 
 Full details on how to install the FPGA AI Suite, including all software and
 hardware requirements, are available in
-[Chapter 4](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/installing-the-compiler-and-ip-generation.html)
-of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-1/getting-started-guide.html).
+[Chapter 4](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-the-compiler-and-ip-generation.html)
+of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html).
 The individual READMEs for each example also contain any additional requirements
 and setup instructions that are particular to that example.
 
@@ -39,6 +39,7 @@ IP over JTAG.
 
 | Family | Development Board |
 | ------ | ----------------- |
+| Agilex 3 | [Agilex 3C Development Kit](agilex3/jtag/README.md) |
 | Agilex 5 | [Agilex 5E Modular Development Kit](agilex5/modular_jtag/README.md) |
 
 ### PCIe-attach
@@ -48,6 +49,7 @@ Suite to offload AI workloads onto an FPGA via PCIe.
 
 | Family | Development Board |
 | ------ | ----------------- |
+| Agilex 5 | [Agilex 5 FPGA E-Series 065B Modular Development Kit](agilex5/modular_ofs_pcie/README.md) |
 | Agilex 7 | [Terasic DE10-Agilex Development Board](agilex7/de10_pcie/README.md) |
 | Agilex 7 | [Agilex 7 FPGA I-Series Development Kit (2x R-Tile and 1x F-Tile)](agilex7/iseries_ofs_pcie/README.md) |
 | Agilex 7 | [Intel FPGA SmartNIC N6001-PL Platform (without an Ethernet controller)](agilex7/n6001_ofs_pcie/README.md) |

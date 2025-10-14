@@ -77,6 +77,7 @@
 module dla_dma import dla_dma_pkg::*; #(
     parameter int CSR_ADDR_WIDTH,               //width of the byte address signal, determines CSR address space size, e.g. 11 bit address = 2048 bytes, the largest size that uses only 1 M20K
     parameter int CSR_DATA_BYTES,               //width of the CSR data path, typically 4 bytes
+    parameter int CONFIG_ADDR_WIDTH,            //width of the configuration RAM memory write address in DDR-free mode.
     parameter int CONFIG_DATA_BYTES,            //data width of the config network output port, typically 4 bytes
     parameter int CONFIG_READER_DATA_BYTES,     //data width of the config network input port, typically 8 bytes
     parameter int FILTER_READER_DATA_BYTES,     //data width of the filter reader, typically a whole DDR word (assuming block floating point, C_VECTOR=16 so 4 filter words packed into 1 DDR word)
@@ -90,8 +91,23 @@ module dla_dma import dla_dma_pkg::*; #(
     parameter bit ENABLE_INPUT_STREAMING,
     parameter bit ENABLE_OUTPUT_STREAMING,
 
+    // Parameters useful for scratchpad online configuration
+    parameter int SCRATCHPAD_MEM_ADDR_WIDTH,
+    parameter int SCRATCHPAD_MEM_ID_WIDTH,
+    parameter int SCRATCHPAD_DATA_WIDTH,
+
     parameter dla_common_pkg::device_family_t DEVICE, //enumerated device value, required for dma writer
     parameter dla_lt_pkg::lt_arch_t LT_ARCH = '{default:0},        // the arch for the dedicated layout transform (if it exists)
+    parameter dla_lw_lt_pkg::lw_lt_arch_t LW_LT_ARCH = '{LW_LT_ENABLED:0,
+                                                        CONFIG_BYTES:0,
+                                                        CVEC:0,
+                                                        AXI_WIDTH:0,
+                                                        CHANNELS:0,
+                                                        CONV_MODE:dla_lt_pkg::convert_mode_t'(0),
+                                                        DEVICE:dla_common_pkg::device_family_t'(0),
+                                                        ENABLE_IN_BIAS_SCALE:0,
+                                                        PIXEL_EXIT_FIFO_DEPTH:0
+                                                    },
     parameter bit ENABLE_ON_CHIP_PARAMETERS,    // Whether configs and filters are on-chip, meaning config reader and filter reader can be disabled
 
     //derived parameters and constants
@@ -185,6 +201,13 @@ module dla_dma import dla_dma_pkg::*; #(
     input  wire              [8*CSR_DATA_BYTES-1:0] i_debug_network_rdata,
     output logic                                    o_debug_network_rready,
 
+    //CSR to scratchpad interface, only useful for ddr-free online configuration
+    scratchpad_update_if.sender                     o_scratchpad_update_if,
+    output logic                                    o_scratchpad_write_en,
+
+    //CSR to instruction module interface, only useful for ddr-free online configuration
+    configuration_update_if.sender                  o_config_update_if,
+
     //global memory, AXI4 master, runs on ddr clock
     output logic                                    o_ddr_arvalid,
     output logic               [DDR_ADDR_WIDTH-1:0] o_ddr_araddr,
@@ -276,6 +299,29 @@ module dla_dma import dla_dma_pkg::*; #(
     logic                           streaming_reload;
     logic                           lt_param_error;
 
+    //Scratchpad online configuration signals
+    scratchpad_update_if #(
+        .ADDR_WIDTH(SCRATCHPAD_MEM_ADDR_WIDTH),
+        .MEM_ID_WIDTH(SCRATCHPAD_MEM_ID_WIDTH),
+        .DATA_WIDTH(SCRATCHPAD_DATA_WIDTH)
+    )  scratchpad_dcfifo_write_if();
+    scratchpad_update_if #(
+        .ADDR_WIDTH(SCRATCHPAD_MEM_ADDR_WIDTH),
+        .MEM_ID_WIDTH(SCRATCHPAD_MEM_ID_WIDTH),
+        .DATA_WIDTH(SCRATCHPAD_DATA_WIDTH)
+    )  scratchpad_dcfifo_read_if();
+    logic               csr_scratchpad_write_valid, csr_scratchpad_write_ready;
+    localparam SCRATCHPAD_DCFIFO_DATA_WIDTH = SCRATCHPAD_MEM_ADDR_WIDTH + SCRATCHPAD_MEM_ID_WIDTH + SCRATCHPAD_DATA_WIDTH + 1;
+
+    //Configuration online configuration signals
+    //For interfacing with the DCFIFO
+    configuration_update_if #(
+        .ADDR_WIDTH                     (CONFIG_ADDR_WIDTH),
+        .DATA_WIDTH                     (CONFIG_READER_DATA_BYTES * 8)
+    ) csr_config_dcfifo_write_if ();
+    logic csr_config_dcfifo_write_ready;
+    localparam CONFIG_DCFIFO_WIDTH = CONFIG_ADDR_WIDTH + CONFIG_READER_DATA_BYTES * 8;
+
     /////////////////////////////
     //  Reset Synchronization  //
     /////////////////////////////
@@ -304,11 +350,13 @@ module dla_dma import dla_dma_pkg::*; #(
     dla_dma_csr #(
         .CSR_ADDR_WIDTH             (CSR_ADDR_WIDTH),
         .CSR_DATA_BYTES             (CSR_DATA_BYTES),
+        .CONFIG_ADDR_WIDTH          (CONFIG_ADDR_WIDTH),
         .CONFIG_DATA_BYTES          (CONFIG_DATA_BYTES),
         .CONFIG_READER_DATA_BYTES   (CONFIG_READER_DATA_BYTES),
         .ENABLE_INPUT_STREAMING     (ENABLE_INPUT_STREAMING),
         .ENABLE_OUTPUT_STREAMING    (ENABLE_OUTPUT_STREAMING),
-        .ENABLE_ON_CHIP_PARAMETERS  (ENABLE_ON_CHIP_PARAMETERS)
+        .ENABLE_ON_CHIP_PARAMETERS  (ENABLE_ON_CHIP_PARAMETERS),
+        .DEVICE_FAMILY              (DEVICE)
     )
     csr
     (
@@ -355,6 +403,11 @@ module dla_dma import dla_dma_pkg::*; #(
         .o_csr_wready                 (o_csr_wready),
         .o_csr_bvalid                 (o_csr_bvalid),
         .i_csr_bready                 (i_csr_bready),
+        .i_scratchpad_write_ready     (csr_scratchpad_write_ready),
+        .o_scratchpad_write_enable    (csr_scratchpad_write_valid),
+        .o_scratchpad_update          (scratchpad_dcfifo_write_if),
+        .o_configuration_update       (csr_config_dcfifo_write_if),
+        .i_config_update_write_ready  (csr_config_dcfifo_write_ready),
         .o_request_ip_reset           (o_request_ip_reset),
         .o_core_streaming_active      (o_core_streaming_active),
         .o_streaming_active           (o_streaming_active)
@@ -379,7 +432,8 @@ module dla_dma import dla_dma_pkg::*; #(
             .DDR_ADDR_WIDTH             (DDR_ADDR_WIDTH),
             .DDR_DATA_BYTES             (DDR_DATA_BYTES),
             .DDR_BURST_WIDTH            (DDR_BURST_WIDTH),
-            .LT_ARCH                    (LT_ARCH)
+            .LT_ARCH                    (LT_ARCH),
+            .DEVICE                     (DEVICE)
         )
         config_reader
         (
@@ -429,7 +483,8 @@ module dla_dma import dla_dma_pkg::*; #(
             .DDR_ADDR_WIDTH             (DDR_ADDR_WIDTH),
             .DDR_DATA_BYTES             (DDR_DATA_BYTES),
             .DDR_BURST_WIDTH            (DDR_BURST_WIDTH),
-            .LT_ARCH                    (LT_ARCH)
+            .LT_ARCH                    (LT_ARCH),
+            .DEVICE                     (DEVICE)
         )
         filter_reader
         (
@@ -474,14 +529,16 @@ module dla_dma import dla_dma_pkg::*; #(
     dla_dma_reader #(
         .READER_WRITER_SEL          (FEATURE_READER_ID),
         .IS_CONFIG_READER           (0),
-        .DO_LAYOUT_TRANSFORM        (LT_ARCH.ENABLE_LT & ~ENABLE_INPUT_STREAMING),
+        .DO_LAYOUT_TRANSFORM        ((LW_LT_ARCH.LW_LT_ENABLED | LT_ARCH.ENABLE_LT) & ~ENABLE_INPUT_STREAMING),
         .NUM_DIMENSIONS             (FEATURE_READER_NUM_DIMENSIONS),
         .CONFIG_DATA_BYTES          (CONFIG_DATA_BYTES),
         .READER_DATA_BYTES          (FEATURE_READER_DATA_BYTES),
         .DDR_ADDR_WIDTH             (DDR_ADDR_WIDTH),
         .DDR_DATA_BYTES             (DDR_DATA_BYTES),
         .DDR_BURST_WIDTH            (DDR_BURST_WIDTH),
-        .LT_ARCH                    (LT_ARCH)
+        .LT_ARCH                    (LT_ARCH),
+        .LW_LT_ARCH                 (LW_LT_ARCH),
+        .DEVICE                     (DEVICE)
     )
     feature_reader
     (
@@ -522,7 +579,8 @@ module dla_dma import dla_dma_pkg::*; #(
         .NUM_PORTS                  (NUM_READERS),
         .DDR_ADDR_WIDTH             (DDR_ADDR_WIDTH),
         .DDR_BURST_WIDTH            (DDR_BURST_WIDTH),
-        .DDR_DATA_BYTES             (DDR_DATA_BYTES)
+        .DDR_DATA_BYTES             (DDR_DATA_BYTES),
+        .DEVICE_FAMILY              (DEVICE)
     )
     read_arb
     (
@@ -666,5 +724,83 @@ module dla_dma import dla_dma_pkg::*; #(
     //tie off constant axi signals, use the same settings as read address channel
     assign o_ddr_awsize =  o_ddr_arsize;
     assign o_ddr_awburst = o_ddr_arburst;
+
+    /////////////////////////////////////////////////////////
+    //  Filter Bias Scale Scratchpad Online Configuration  //
+    /////////////////////////////////////////////////////////
+
+    if (~ENABLE_ON_CHIP_PARAMETERS) begin
+        assign o_scratchpad_write_en = 1'b0;
+        assign o_scratchpad_update_if.data.is_filter = 1'b0;
+        assign o_scratchpad_update_if.data.mem_id = '0;
+        assign o_scratchpad_update_if.data.addr = '0;
+        assign o_scratchpad_update_if.data.data = '0;
+        assign csr_scratchpad_write_ready = 1'b1;
+        assign o_config_update_if.data.data = '0;
+        assign o_config_update_if.data.addr = '0;
+        assign o_config_update_if.valid = 1'b0;
+        assign csr_config_dcfifo_write_ready = 1'b1;
+    end
+    else begin
+        localparam int DCFIFO_DEPTH = 32;              //dcfifo is RAM-based, may as well use an entire MLAB
+        localparam int DCFIFO_ALMOST_FULL_CUTOFF = 0;
+        logic          scratchpad_dcfifo_stall, scratchpad_dcfifo_read_empty;
+        assign         csr_scratchpad_write_ready = ~scratchpad_dcfifo_stall;
+        assign         o_scratchpad_write_en = ~scratchpad_dcfifo_read_empty;
+        assign         o_scratchpad_update_if.data = scratchpad_dcfifo_read_if.data;
+        dla_acl_dcfifo #(
+            .WIDTH                      (SCRATCHPAD_DCFIFO_DATA_WIDTH),
+            .DEPTH                      (DCFIFO_DEPTH),
+            .ALMOST_FULL_CUTOFF         (DCFIFO_ALMOST_FULL_CUTOFF)
+        )
+        scratchpad_update_clock_crosser
+        (
+            .async_resetn               (i_resetn_async),   //reset synchronization is handled internally
+
+            //write side
+            .wr_clock                   (clk_ddr),
+            .wr_req                     (csr_scratchpad_write_valid),
+            .wr_data                    (scratchpad_dcfifo_write_if.data),
+            .wr_full                    (),
+            .wr_almost_full             (scratchpad_dcfifo_stall),
+
+            //read side
+            .rd_clock                   (clk_dla),
+            .rd_empty                   (scratchpad_dcfifo_read_empty),
+            .rd_data                    (scratchpad_dcfifo_read_if.data),
+            .rd_ack                     (1'b1),
+            .rd_almost_empty            (),
+            .wr_read_update_for_ccb     ()
+        );
+
+
+        logic          config_dcfifo_stall, config_dcfifo_read_empty;
+        assign         csr_config_dcfifo_write_ready = ~config_dcfifo_stall;
+        assign         o_config_update_if.valid = ~config_dcfifo_read_empty;
+        dla_acl_dcfifo #(
+            .WIDTH                      (CONFIG_DCFIFO_WIDTH),
+            .DEPTH                      (DCFIFO_DEPTH),
+            .ALMOST_FULL_CUTOFF         (DCFIFO_ALMOST_FULL_CUTOFF)
+        )
+        config_update_clock_crosser
+        (
+            .async_resetn               (i_resetn_async),   //reset synchronization is handled internally
+
+            //write side
+            .wr_clock                   (clk_ddr),
+            .wr_req                     (csr_config_dcfifo_write_if.valid),
+            .wr_data                    (csr_config_dcfifo_write_if.data),
+            .wr_full                    (),
+            .wr_almost_full             (config_dcfifo_stall),
+
+            //read side
+            .rd_clock                   (clk_dla),
+            .rd_empty                   (config_dcfifo_read_empty),
+            .rd_data                    (o_config_update_if.data),
+            .rd_ack                     (1'b1),
+            .rd_almost_empty            (),
+            .wr_read_update_for_ccb     ()
+        );
+    end
 
 endmodule

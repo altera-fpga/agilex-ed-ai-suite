@@ -24,6 +24,10 @@ module altera_ai_ip #(
   parameter int     C_DDR_AXI_DATA_WIDTH,
   parameter int     C_DDR_AXI_THREAD_ID_WIDTH,
 
+  // Streaming params
+  parameter int     AXI_ISTREAM_DATA_WIDTH,
+  parameter int     AXI_OSTREAM_DATA_WIDTH,
+
   parameter string  ARCH_OPTION,
 
   // Width of various axi signals from the axi4 spec
@@ -32,7 +36,8 @@ module altera_ai_ip #(
   localparam int    AXI_BURST_TYPE_WIDTH=2
 ) (
   input   wire                                    dla_clk,
-  input  wire                                     ddr_clk,
+  input   wire                                    ddr_clk,
+  input   wire                                    axi_clk,
   input   wire                                    irq_clk,
   input   wire                                    dla_resetn,
 
@@ -90,7 +95,17 @@ module altera_ai_ip #(
   input  wire     [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_axi_rid,
   input  wire          [C_DDR_AXI_DATA_WIDTH-1:0] ddr_axi_rdata,
   input  wire                                     ddr_axi_rvalid,
-  output logic                                    ddr_axi_rready
+  output logic                                    ddr_axi_rready,
+
+  input  wire                                     istream_axi_t_valid,
+  output logic                                    istream_axi_t_ready,
+  input  wire        [AXI_ISTREAM_DATA_WIDTH-1:0] istream_axi_t_data,
+
+  output logic                                    ostream_axi_t_valid,
+  input wire                                      ostream_axi_t_ready,
+  output wire                                     ostream_axi_t_last,
+  output logic       [AXI_OSTREAM_DATA_WIDTH-1:0] ostream_axi_t_data,
+  output logic   [(AXI_OSTREAM_DATA_WIDTH/8)-1:0] ostream_axi_t_strb
 );
 
 @@ set count 0
@@ -100,11 +115,12 @@ module altera_ai_ip #(
 @@    set condition "else if"
 @@ }
 ${condition} (ARCH_OPTION == "${arch}") begin
-  dla_top_wrapper_${arch} dla_top_inst
+  dla_top_wrapper_${arch} #(.C_DDR_AXI_ADDR_WIDTH(C_DDR_AXI_ADDR_WIDTH), .C_DDR_AXI_DATA_WIDTH(C_DDR_AXI_DATA_WIDTH), .C_DDR_AXI_THREAD_ID_WIDTH(C_DDR_AXI_THREAD_ID_WIDTH)) dla_top_inst
   (
     //clocks and resets, all resets are not synchronized
     .ddr_clk                    (ddr_clk),
     .dla_clk                    (dla_clk),
+    .axi_clk                    (axi_clk),
     .irq_clk                    (irq_clk),
     .dla_resetn                 (dla_resetn),
 
@@ -151,7 +167,19 @@ ${condition} (ARCH_OPTION == "${arch}") begin
     .o_ddr_wlast                (ddr_axi_wlast),
     .i_ddr_wready               (ddr_axi_wready),
     .i_ddr_bvalid               (ddr_axi_bvalid),
-    .o_ddr_bready               (ddr_axi_bready)
+    .o_ddr_bready               (ddr_axi_bready),
+
+    // AXI-s input signals
+    .i_istream_axi_t_valid      (istream_axi_t_valid),
+    .o_istream_axi_t_ready      (istream_axi_t_ready),
+    .i_istream_axi_t_data       (istream_axi_t_data), 
+
+    // AXI-s output signals
+    .o_ostream_axi_t_valid      (ostream_axi_t_valid),
+    .i_ostream_axi_t_ready      (ostream_axi_t_ready),
+    .o_ostream_axi_t_last       (ostream_axi_t_last),
+    .o_ostream_axi_t_data       (ostream_axi_t_data), 
+    .o_ostream_axi_t_strb       (ostream_axi_t_strb)
   );
 end
 @@set count 1

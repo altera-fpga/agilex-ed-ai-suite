@@ -9,7 +9,22 @@ set_module_property DESCRIPTION {Address span extender system for windowed acces
 set_module_property AUTHOR {DLA}
 set_module_property COMPOSITION_CALLBACK compose
 
+# +-----------------------------------
+# | parameters
+# |
+source parameters.tcl
+
+add_parameter MEMORY_BANK_DATA_WIDTH INTEGER $p_MEMORY_BANK_DATA_WIDTH
+set_parameter_property MEMORY_BANK_DATA_WIDTH DEFAULT_VALUE $p_MEMORY_BANK_DATA_WIDTH
+set_parameter_property MEMORY_BANK_DATA_WIDTH DISPLAY_NAME "Memory Bank Data Width"
+set_parameter_property MEMORY_BANK_DATA_WIDTH AFFECTS_ELABORATION true
+# | 
+# +-----------------------------------
+
 proc compose { } {
+  # Get parameters
+  set memory_bank_data_width    [ get_parameter_value MEMORY_BANK_DATA_WIDTH ]
+
   # Instances and instance parameters
   add_instance clock_in altera_clock_bridge 19.2.0
   set_instance_parameter_value clock_in {EXPLICIT_CLOCK_RATE} {0.0}
@@ -54,7 +69,7 @@ proc compose { } {
 
   add_instance address_span_extender altera_address_span_extender 19.2.0
   set_instance_parameter_value address_span_extender {BURSTCOUNT_WIDTH} {4}
-  set_instance_parameter_value address_span_extender {DATA_WIDTH} {512}
+  set_instance_parameter_value address_span_extender {DATA_WIDTH} $memory_bank_data_width
   set_instance_parameter_value address_span_extender {ENABLE_SLAVE_PORT} {1}
   set_instance_parameter_value address_span_extender {MASTER_ADDRESS_DEF} {0}
   set_instance_parameter_value address_span_extender {MASTER_ADDRESS_WIDTH} {48}

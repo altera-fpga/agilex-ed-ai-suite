@@ -22,7 +22,8 @@ module altera_ai_ip #(
   // DDR AVLMM Master
   parameter int     C_DDR_AXI_ADDR_WIDTH,
   parameter int     C_DDR_AXI_DATA_WIDTH,
-  parameter int     C_DDR_AXI_THREAD_ID_WIDTH,
+  parameter int     C_DDR_AXI_READ_ID_WIDTH,
+  parameter int     C_DDR_AXI_WRITE_ID_WIDTH,
 
   // Streaming params
   parameter int     AXI_ISTREAM_DATA_WIDTH,
@@ -68,7 +69,7 @@ module altera_ai_ip #(
 
   //global memory, AXI4 master, runs on ddr clock and core_resetn
 
-  output logic    [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_axi_awid, // required by AXI standard. not used
+  output logic    [C_DDR_AXI_WRITE_ID_WIDTH-1:0] ddr_axi_awid, // AXI write ID, driven by CoreDLA
   output logic         [C_DDR_AXI_ADDR_WIDTH-1:0] ddr_axi_awaddr,
   output logic       [AXI_BURST_LENGTH_WIDTH-1:0] ddr_axi_awlen,
   output logic         [AXI_BURST_SIZE_WIDTH-1:0] ddr_axi_awsize,
@@ -81,10 +82,10 @@ module altera_ai_ip #(
   output logic                                    ddr_axi_wlast,
   output logic                                    ddr_axi_wvalid,
   input  wire                                     ddr_axi_wready,
-  input  wire     [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_axi_bid, // required by AXI standard. not used
+  input  wire     [C_DDR_AXI_WRITE_ID_WIDTH-1:0] ddr_axi_bid, // required by AXI standard. not used
   input  wire                                     ddr_axi_bvalid,
   output logic                                    ddr_axi_bready,
-  output logic    [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_axi_arid,
+  output logic    [C_DDR_AXI_READ_ID_WIDTH-1:0] ddr_axi_arid,
   output logic         [C_DDR_AXI_ADDR_WIDTH-1:0] ddr_axi_araddr,
   output logic       [AXI_BURST_LENGTH_WIDTH-1:0] ddr_axi_arlen,
   output logic         [AXI_BURST_SIZE_WIDTH-1:0] ddr_axi_arsize,
@@ -92,7 +93,7 @@ module altera_ai_ip #(
   output logic                              [2:0] ddr_axi_arprot, // required by AXI standard. not used
   output logic                                    ddr_axi_arvalid,
   input  wire                                     ddr_axi_arready,
-  input  wire     [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_axi_rid,
+  input  wire     [C_DDR_AXI_READ_ID_WIDTH-1:0] ddr_axi_rid,
   input  wire          [C_DDR_AXI_DATA_WIDTH-1:0] ddr_axi_rdata,
   input  wire                                     ddr_axi_rvalid,
   output logic                                    ddr_axi_rready,
@@ -115,7 +116,7 @@ module altera_ai_ip #(
 @@    set condition "else if"
 @@ }
 ${condition} (ARCH_OPTION == "${arch}") begin
-  dla_top_wrapper_${arch} #(.C_DDR_AXI_ADDR_WIDTH(C_DDR_AXI_ADDR_WIDTH), .C_DDR_AXI_DATA_WIDTH(C_DDR_AXI_DATA_WIDTH), .C_DDR_AXI_THREAD_ID_WIDTH(C_DDR_AXI_THREAD_ID_WIDTH)) dla_top_inst
+  dla_top_wrapper_${arch} #(.C_DDR_AXI_ADDR_WIDTH(C_DDR_AXI_ADDR_WIDTH), .C_DDR_AXI_DATA_WIDTH(C_DDR_AXI_DATA_WIDTH), .C_DDR_AXI_READ_ID_WIDTH(C_DDR_AXI_READ_ID_WIDTH), .C_DDR_AXI_WRITE_ID_WIDTH(C_DDR_AXI_WRITE_ID_WIDTH)) dla_top_inst
   (
     //clocks and resets, all resets are not synchronized
     .ddr_clk                    (ddr_clk),
@@ -160,6 +161,7 @@ ${condition} (ARCH_OPTION == "${arch}") begin
     .o_ddr_awlen                (ddr_axi_awlen),
     .o_ddr_awsize               (ddr_axi_awsize),
     .o_ddr_awburst              (ddr_axi_awburst),
+    .o_ddr_awid                 (ddr_axi_awid),
     .i_ddr_awready              (ddr_axi_awready),
     .o_ddr_wvalid               (ddr_axi_wvalid),
     .o_ddr_wdata                (ddr_axi_wdata),
@@ -172,13 +174,13 @@ ${condition} (ARCH_OPTION == "${arch}") begin
     // AXI-s input signals
     .i_istream_axi_t_valid      (istream_axi_t_valid),
     .o_istream_axi_t_ready      (istream_axi_t_ready),
-    .i_istream_axi_t_data       (istream_axi_t_data), 
+    .i_istream_axi_t_data       (istream_axi_t_data),
 
     // AXI-s output signals
     .o_ostream_axi_t_valid      (ostream_axi_t_valid),
     .i_ostream_axi_t_ready      (ostream_axi_t_ready),
     .o_ostream_axi_t_last       (ostream_axi_t_last),
-    .o_ostream_axi_t_data       (ostream_axi_t_data), 
+    .o_ostream_axi_t_data       (ostream_axi_t_data),
     .o_ostream_axi_t_strb       (ostream_axi_t_strb)
   );
 end

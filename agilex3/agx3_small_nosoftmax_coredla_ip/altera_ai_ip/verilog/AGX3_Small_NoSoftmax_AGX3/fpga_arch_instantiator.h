@@ -19,7 +19,7 @@
 #define FILTER_CACHE_DEPTH 512
 #define BIAS_SCALE_CACHE_DEPTH 512
 // feature scratchpad
-#define STREAM_BUFFER_DEPTH 4096
+#define STREAM_BUFFER_DEPTH 8192
 #define SB_C_BANKS 16
 #define SB_CVEC_BANK_PACK 2
 // stride, dilation

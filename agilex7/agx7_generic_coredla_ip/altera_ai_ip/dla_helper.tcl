@@ -298,7 +298,10 @@ proc dla_add_axi4_master_interface { prefix clk rst }  {
 
   # refer to parameters set in core_hw.tcl
   set addr_width      ${parameter_prefix}_ADDR_WIDTH
-  set read_id_width   ${parameter_prefix}_THREAD_ID_WIDTH
+  set read_id_width   ${parameter_prefix}_READ_ID_WIDTH
+  # set write_id_width   ${parameter_prefix}_WRITE_ID_WIDTH
+  # Hack: PD expects the DDR AXI4's ID width to be the same across all channels. Use ARID for all channels for the time being.
+  set write_id_width   ${parameter_prefix}_READ_ID_WIDTH
   set data_width      ${parameter_prefix}_DATA_WIDTH
   ######################################################################################
   add_interface $prefix axi4 $direction
@@ -339,14 +342,14 @@ proc dla_add_axi4_master_interface { prefix clk rst }  {
   add_interface_port $prefix ${prefix}_bvalid bvalid $master_in 1
   add_interface_port $prefix ${prefix}_bready bready $master_out 1
   add_interface_port $prefix ${prefix}_awaddr awaddr $master_out $addr_width
-  add_interface_port $prefix ${prefix}_awid awid $master_out $read_id_width
+  add_interface_port $prefix ${prefix}_awid awid $master_out $write_id_width
   add_interface_port $prefix ${prefix}_araddr araddr $master_out $addr_width
   add_interface_port $prefix ${prefix}_arid arid $master_out $read_id_width
   add_interface_port $prefix ${prefix}_rdata rdata $master_in $data_width
   add_interface_port $prefix ${prefix}_rid rid $master_in $read_id_width
   add_interface_port $prefix ${prefix}_wdata wdata $master_out $data_width
   add_interface_port $prefix ${prefix}_wstrb wstrb $master_out ($data_width/8)
-  add_interface_port $prefix ${prefix}_bid bid $master_in $read_id_width
+  add_interface_port $prefix ${prefix}_bid bid $master_in $write_id_width
 }
 
 ###################################################################################

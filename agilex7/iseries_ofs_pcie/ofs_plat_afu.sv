@@ -35,8 +35,6 @@ localparam int AXI_ID_IN = 16;
 localparam int AXI_ID_OUT = 18;
 localparam int DMA_CSR_ADDR_W = 16;
 
-logic sw_reset_n;
-
 // DLA IP wrapper logic clock and reset (all on DDR bank 0 core clock)
 logic clk_wrapper, resetn_wrapper;
 assign clk_wrapper    = plat_ifc.local_mem.banks[0].clk;
@@ -44,8 +42,8 @@ assign resetn_wrapper = plat_ifc.local_mem.banks[0].reset_n;
 
 // DLA IP clock and reset (on OFS user clock)
 logic clk_dla, resetn_dla;
-assign clk_dla    = plat_ifc.clocks.uClk_usrDiv2.clk;
-assign resetn_dla = plat_ifc.clocks.uClk_usrDiv2.reset_n;
+assign clk_dla    = plat_ifc.clocks.uClk_usr.clk;
+assign resetn_dla = plat_ifc.clocks.uClk_usr.reset_n;
 
 // DLA IP DDR clocks and resets
 logic clk_ddr[MAX_DLA_INSTANCES];
@@ -55,7 +53,7 @@ generate
   for (a = 0; a < MAX_DLA_INSTANCES; a = a + 1)
     begin : dla_ip_clocks_resets
       assign clk_ddr[a]    = clk_wrapper;
-      assign resetn_ddr[a] = sw_reset_n;
+      assign resetn_ddr[a] = resetn_wrapper;
     end
 endgenerate
 
@@ -94,14 +92,14 @@ logic                                 dla_ddr_wvalid  [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_wready  [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_bvalid  [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_bready  [MAX_DLA_INSTANCES];
-logic [C_DDR_AXI_THREAD_ID_WIDTH-1:0] dla_ddr_arid    [MAX_DLA_INSTANCES];
+logic [C_DDR_AXI_READ_ID_WIDTH-1:0] dla_ddr_arid    [MAX_DLA_INSTANCES];
 logic      [C_DDR_AXI_ADDR_WIDTH-1:0] dla_ddr_araddr  [MAX_DLA_INSTANCES];
 logic                           [7:0] dla_ddr_arlen   [MAX_DLA_INSTANCES];
 logic                           [2:0] dla_ddr_arsize  [MAX_DLA_INSTANCES];
 logic                           [1:0] dla_ddr_arburst [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_arvalid [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_arready [MAX_DLA_INSTANCES];
-logic [C_DDR_AXI_THREAD_ID_WIDTH-1:0] dla_ddr_rid     [MAX_DLA_INSTANCES];
+logic [C_DDR_AXI_READ_ID_WIDTH-1:0] dla_ddr_rid     [MAX_DLA_INSTANCES];
 logic      [C_DDR_AXI_DATA_WIDTH-1:0] dla_ddr_rdata   [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_rvalid  [MAX_DLA_INSTANCES];
 logic                                 dla_ddr_rready  [MAX_DLA_INSTANCES];
@@ -212,7 +210,7 @@ ofs_plat_axi_mem_if
   .LOG_CLASS(ofs_plat_log_pkg::HOST_CHAN)
 ) host_mem_mux();
 
-assign host_mem_mux.clk = host_mem.clk;
+assign host_mem_mux.clk     = host_mem.clk;
 assign host_mem_mux.reset_n = host_mem.reset_n;
 
 // Instance of the PIM's AXI memory lite interface, which will be
@@ -329,7 +327,7 @@ generate
 
       assign local_mem_to_afu[b].aw.atop = '0;
 
-      assign dma_to_local_mem[b].clk = plat_ifc.local_mem.banks[0].clk;
+      assign dma_to_local_mem[b].clk     = plat_ifc.local_mem.banks[0].clk;
       assign dma_to_local_mem[b].reset_n = plat_ifc.local_mem.banks[0].reset_n;
 
     end
@@ -366,8 +364,6 @@ dla_afu dla_afu_inst (
 
   .dla_clk_clk       (clk_dla),
   .dla_reset_reset_n (resetn_dla),
-
-  .sw_reset_reset_n  (sw_reset_n),
 
   // MMIO Control going in
   // Write channel
@@ -1277,7 +1273,8 @@ dla_platform_wrapper
   .C_DDR_AXI_ADDR_WIDTH      (C_DDR_AXI_ADDR_WIDTH),
   .C_DDR_AXI_DATA_WIDTH      (C_DDR_AXI_DATA_WIDTH),
   .C_DDR_AXI_BURST_WIDTH     (C_DDR_AXI_BURST_WIDTH),
-  .C_DDR_AXI_THREAD_ID_WIDTH (C_DDR_AXI_THREAD_ID_WIDTH),
+  .C_DDR_AXI_READ_ID_WIDTH (C_DDR_AXI_READ_ID_WIDTH),
+  .C_DDR_AXI_WRITE_ID_WIDTH (C_DDR_AXI_WRITE_ID_WIDTH),
   .MAX_DLA_INSTANCES         (MAX_DLA_INSTANCES),
   .HW_TIMER_WIDTH            (HW_TIMER_WIDTH),
   .ENABLE_INPUT_STREAMING    (ENABLE_INPUT_STREAMING),
@@ -1292,9 +1289,9 @@ dla_platform_wrapper
   .clk_dla                   (clk_dla),
   .clk_ddr                   (clk_ddr), 
   .clk_pcie                  (clk_wrapper),
-  .i_resetn_dla              (sw_reset_n),
+  .i_resetn_dla              (resetn_dla),
   .i_resetn_ddr              (resetn_ddr),
-  .i_resetn_pcie             (sw_reset_n),
+  .i_resetn_pcie             (resetn_wrapper),
 
   // interrupt request, AXI4 stream master without data, runs on pcie clock
   .o_interrupt_level         (irq), 

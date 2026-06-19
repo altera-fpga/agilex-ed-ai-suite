@@ -62,17 +62,17 @@ proc compose { } {
   set_instance_parameter_value reset_in {ACTIVE_LOW_RESET} {1}
   set_instance_parameter_value reset_in {SYNCHRONOUS_EDGES} {deassert}
   set_instance_parameter_value reset_in {NUM_RESET_OUTPUTS} {6} 
-  set_instance_parameter_value reset_in {SYNC_RESET} {1}
+  set_instance_parameter_value reset_in {SYNC_RESET} {0}
   set_instance_parameter_value reset_in {USE_RESET_REQUEST} {0}
 
   add_instance dla_reset_in altera_reset_bridge 19.2.0
   set_instance_parameter_value dla_reset_in {ACTIVE_LOW_RESET} {1}
   set_instance_parameter_value dla_reset_in {SYNCHRONOUS_EDGES} {deassert}
   set_instance_parameter_value dla_reset_in {NUM_RESET_OUTPUTS} {1} 
-  set_instance_parameter_value dla_reset_in {SYNC_RESET} {1}
+  set_instance_parameter_value dla_reset_in {SYNC_RESET} {0}
   set_instance_parameter_value dla_reset_in {USE_RESET_REQUEST} {0}
 
-  add_instance mmio_control altera_axi_bridge 19.4.0
+  add_instance mmio_control altera_axi_bridge 19.9.3
   set_instance_parameter_value mmio_control {ACE_LITE_SUPPORT} {0}
   set_instance_parameter_value mmio_control {ADDR_WIDTH} $mmio_address_width
   set_instance_parameter_value mmio_control {AXI_VERSION} {AXI4}
@@ -143,11 +143,7 @@ proc compose { } {
   set_instance_parameter_value mmio_control {WRITE_ISSUING_CAPABILITY} {1}
   set_instance_parameter_value mmio_control {WRITE_RESP_USER_WIDTH} {1}
 
-  add_instance sw_reset sw_reset 10.0
-  set_instance_parameter_value sw_reset {WIDTH} {64}
-  set_instance_parameter_value sw_reset {LOG2_RESET_CYCLES} {8}
-
-  add_instance dma_csr altera_axi_bridge 19.4.0
+  add_instance dma_csr altera_axi_bridge 19.9.3
   set_instance_parameter_value dma_csr {ACE_LITE_SUPPORT} {0}
   set_instance_parameter_value dma_csr {ADDR_WIDTH} {16}
   set_instance_parameter_value dma_csr {AXI_VERSION} {AXI4}
@@ -220,7 +216,7 @@ proc compose { } {
 
   add_instance ase ase 24.1
 
-  add_instance ase_pipe_all altera_axi_bridge 19.4.0
+  add_instance ase_pipe_all altera_axi_bridge 19.9.3
   set_instance_parameter_value ase_pipe_all {ACE_LITE_SUPPORT} {0}
   set_instance_parameter_value ase_pipe_all {ADDR_WIDTH} {35}
   set_instance_parameter_value ase_pipe_all {AXI_VERSION} {AXI4}
@@ -292,7 +288,7 @@ proc compose { } {
   set_instance_parameter_value ase_pipe_all {WRITE_RESP_USER_WIDTH} {1}
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
-    add_instance ase_pipe_ddr$i altera_axi_bridge 19.4.0
+    add_instance ase_pipe_ddr$i altera_axi_bridge 19.9.3
     set_instance_parameter_value ase_pipe_ddr$i {ACE_LITE_SUPPORT} {0}
     set_instance_parameter_value ase_pipe_ddr$i {ADDR_WIDTH} $memory_bank_address_width
     set_instance_parameter_value ase_pipe_ddr$i {AXI_VERSION} {AXI4}
@@ -364,7 +360,7 @@ proc compose { } {
     set_instance_parameter_value ase_pipe_ddr$i {WRITE_RESP_USER_WIDTH} {2}
   }
 
-  add_instance dla_csr_pipe_all altera_axi_bridge 19.4.0
+  add_instance dla_csr_pipe_all altera_axi_bridge 19.9.3
   set_instance_parameter_value dla_csr_pipe_all {ACE_LITE_SUPPORT} {0}
   set_instance_parameter_value dla_csr_pipe_all {ADDR_WIDTH} {16}
   set_instance_parameter_value dla_csr_pipe_all {AXI_VERSION} {AXI4}
@@ -436,7 +432,7 @@ proc compose { } {
   set_instance_parameter_value dla_csr_pipe_all {WRITE_RESP_USER_WIDTH} {1}
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
-    add_instance dla_csr$i altera_axi_bridge 19.4.0
+    add_instance dla_csr$i altera_axi_bridge 19.9.3
     set_instance_parameter_value dla_csr$i {ACE_LITE_SUPPORT} {0}
     set_instance_parameter_value dla_csr$i {ADDR_WIDTH} {11}
     set_instance_parameter_value dla_csr$i {AXI_VERSION} {AXI4-Lite}
@@ -509,7 +505,7 @@ proc compose { } {
   }
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
-    add_instance dla_ddr_in$i altera_axi_bridge 19.4.0
+    add_instance dla_ddr_in$i altera_axi_bridge 19.9.3
     set_instance_parameter_value dla_ddr_in$i {ACE_LITE_SUPPORT} {0}
     set_instance_parameter_value dla_ddr_in$i {ADDR_WIDTH} $memory_bank_address_width
     set_instance_parameter_value dla_ddr_in$i {AXI_VERSION} {AXI4}
@@ -582,7 +578,7 @@ proc compose { } {
   }
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
-    add_instance dma_ddr_in$i altera_axi_bridge 19.4.0
+    add_instance dma_ddr_in$i altera_axi_bridge 19.9.3
     set_instance_parameter_value dma_ddr_in$i {ACE_LITE_SUPPORT} {0}
     set_instance_parameter_value dma_ddr_in$i {ADDR_WIDTH} $memory_bank_address_width
     set_instance_parameter_value dma_ddr_in$i {AXI_VERSION} {AXI4}
@@ -655,7 +651,7 @@ proc compose { } {
   }
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
-    add_instance mux_ddr_out$i altera_axi_bridge 19.4.0
+    add_instance mux_ddr_out$i altera_axi_bridge 19.9.3
     set_instance_parameter_value mux_ddr_out$i {ACE_LITE_SUPPORT} {0}
     set_instance_parameter_value mux_ddr_out$i {ADDR_WIDTH} $memory_bank_address_width
     set_instance_parameter_value mux_ddr_out$i {AXI_VERSION} {AXI4}
@@ -739,7 +735,7 @@ proc compose { } {
   set_instance_parameter_value dla_hw_timer_wrapper {PIPELINE_RESPONSE} {1}
   set_instance_parameter_value dla_hw_timer_wrapper {SYNC_RESET} {0}
 
-  add_instance dla_hw_timer mm_ccb 19.2.1
+  add_instance dla_hw_timer mm_ccb 19.3.0
   set_instance_parameter_value dla_hw_timer {ADDRESS_UNITS} {SYMBOLS}
   set_instance_parameter_value dla_hw_timer {ADDRESS_WIDTH} {11}
   set_instance_parameter_value dla_hw_timer {COMMAND_FIFO_DEPTH} {32}
@@ -762,7 +758,6 @@ proc compose { } {
   add_connection pcie_clk_in.out_clk ase_pipe_all.clk clock
   add_connection pcie_clk_in.out_clk dla_hw_timer_wrapper.clk clock
   add_connection pcie_clk_in.out_clk dla_hw_timer.s0_clk clock
-  add_connection pcie_clk_in.out_clk sw_reset.clk clock
   add_connection dla_clk_in.out_clk dla_reset_in.clk clock
   add_connection dla_clk_in.out_clk dla_hw_timer.m0_clk clock
 
@@ -782,7 +777,6 @@ proc compose { } {
   add_connection reset_in.out_reset ase_pipe_all.clk_reset reset
   add_connection reset_in.out_reset dla_hw_timer_wrapper.reset reset
   add_connection reset_in.out_reset dla_hw_timer.s0_reset reset
-  add_connection reset_in.out_reset sw_reset.clk_reset reset
   add_connection dla_reset_in.out_reset dla_hw_timer.m0_reset reset
 
   for { set i 0} { $i < $number_of_memory_banks} {incr i} {
@@ -813,11 +807,6 @@ proc compose { } {
   set_connection_parameter_value mmio_control.m0/dla_hw_timer_wrapper.s0 arbitrationPriority {1}
   set_connection_parameter_value mmio_control.m0/dla_hw_timer_wrapper.s0 baseAddress {0x37000}
   set_connection_parameter_value mmio_control.m0/dla_hw_timer_wrapper.s0 defaultConnection {0}
-
-  add_connection mmio_control.m0/sw_reset.s
-  set_connection_parameter_value mmio_control.m0/sw_reset.s arbitrationPriority {1}
-  set_connection_parameter_value mmio_control.m0/sw_reset.s baseAddress {0x40000}
-  set_connection_parameter_value mmio_control.m0/sw_reset.s defaultConnection {0}
 
   add_connection dla_hw_timer_wrapper.m0/dla_hw_timer.s0 
   set_connection_parameter_value dla_hw_timer_wrapper.m0/dla_hw_timer.s0 arbitrationPriority {1}
@@ -872,9 +861,6 @@ proc compose { } {
 
   add_interface dla_reset reset sink
   set_interface_property dla_reset EXPORT_OF dla_reset_in.in_reset
-
-  add_interface sw_reset reset source
-  set_interface_property sw_reset EXPORT_OF sw_reset.sw_reset 
 
   # Data
   add_interface mmio_control axi4 slave

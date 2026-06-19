@@ -1,4 +1,4 @@
-package require -exact qsys 25.3
+package require -exact qsys 26.1
 
 proc do_create_system {} {
 	# system name
@@ -15,7 +15,7 @@ proc do_create_system {} {
 	set_module_property FILE ${system_name}.qsys
 	set_module_property GENERATION_ID {0x00000000}
 	set_module_property NAME ${system_name}
-	
+
     # Name of components
 	set jtag_address_span_extender_inst "jtag_address_span_extender"
 	set emif_address_span_extender_inst "emif_address_span_extender"
@@ -134,7 +134,7 @@ proc do_create_system {} {
 	set_interface_property reset_handler_reset_n_1 EXPORT_OF ${reset_handler}.reset_n_1
 	set_interface_property ${dla_pll}_refclk EXPORT_OF ${dla_pll}.refclk
 	set_interface_property ${jtag_pll}_refclk EXPORT_OF ${jtag_pll}.refclk
-	set_interface_property ${csr_data_bridge}_m0 EXPORT_OF ${csr_data_bridge}.m0 
+	set_interface_property ${csr_data_bridge}_m0 EXPORT_OF ${csr_data_bridge}.m0
 	set_interface_property ${emif_data_bridge}_s0 EXPORT_OF ${emif_data_bridge}.s0
 	set_interface_property ${emif_clk_bridge}_out_clk EXPORT_OF ${emif_clk_bridge}.out_clk
 	set_interface_property ${shell_usr_clk_bridge}_out_clk EXPORT_OF ${shell_usr_clk_bridge}.out_clk
@@ -286,14 +286,14 @@ proc instantiate_emif_bridge {} {
 	set_component_parameter_value DATA_WIDTH $emif_data_width
 	set_component_parameter_value ENABLE_CONCURRENT_SUBORDINATE_ACCESS {0}
 	set_component_parameter_value ENABLE_OOO {0}
-	set_component_parameter_value M0_ID_WIDTH {2}
+	set_component_parameter_value M0_ID_WIDTH {5}
 	set_component_parameter_value NO_REPEATED_IDS_BETWEEN_SUBORDINATES {0}
 	set_component_parameter_value READ_ACCEPTANCE_CAPABILITY {64}
 	set_component_parameter_value READ_ADDR_USER_WIDTH {2}
 	set_component_parameter_value READ_DATA_REORDERING_DEPTH {1}
 	set_component_parameter_value READ_DATA_USER_WIDTH {2}
 	set_component_parameter_value READ_ISSUING_CAPABILITY {64}
-	set_component_parameter_value S0_ID_WIDTH {2}
+	set_component_parameter_value S0_ID_WIDTH {5}
 	set_component_parameter_value SAI_WIDTH {1}
 	set_component_parameter_value SYNC_RESET {0}
 	set_component_parameter_value USE_M0_ADDRCHK {0}
@@ -357,16 +357,16 @@ proc instantiate_emif_bridge {} {
 	set_component_parameter_value WRITE_RESP_USER_WIDTH {2}
 	set_component_project_property HIDE_FROM_IP_CATALOG {false}
 	save_component
-} 
+}
 
 proc instantiate_emif {} {
-	# Instantiate an LPDDR4x32 interface 
+	# Instantiate an LPDDR4x32 interface
 	# LPDDR4 interface is physical bank 2A
 	upvar emif emif
 	upvar emif_lpddr4_phy_freq_mhz emif_lpddr4_phy_freq_mhz
 	upvar emif_lpddr4_ref_clk_frequency_mhz emif_lpddr4_ref_clk_frequency_mhz
 
-	add_component ${emif} ip/ed_zero/ed_zero_emif_io96b_lpddr4_0.ip emif_io96b_lpddr4 emif_io96b_lpddr4_0 4.1.0
+	add_component ${emif} ip/ed_zero/ed_zero_emif_io96b_lpddr4_0.ip emif_io96b_lpddr4 emif_io96b_lpddr4_0
 	load_component ${emif}
 	# Disable DM/DBI since CoreDLA can't take advantage of these.
 	set_component_parameter_value ADV_CAL_ENABLE_MARGIN {0}
@@ -509,7 +509,7 @@ proc instantiate_emif {} {
 	load_instantiation ${emif}
 	set_instantiation_interface_parameter_value s0_axi4 combinedAcceptanceCapability {64}
 	set_instantiation_interface_parameter_value s0_axi4 readAcceptanceCapability {64}
-	set_instantiation_interface_parameter_value s0_axi4 writeAcceptanceCapability {64} 
+	set_instantiation_interface_parameter_value s0_axi4 writeAcceptanceCapability {64}
 	save_instantiation
 }
 
@@ -580,10 +580,10 @@ proc instantiate_pmon {} {
 	set_component_parameter_value LOG_PRINT_ALL {0}
 	set_component_parameter_value MONITOR_0_ADVANCED_LAT {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_ARADDR_WIDTH ${emif_addr_width}
-	set_component_parameter_value MONITOR_0_MEM_AXI4_ARID_WIDTH {2}
+	set_component_parameter_value MONITOR_0_MEM_AXI4_ARID_WIDTH {5}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_ARUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_AWADDR_WIDTH ${emif_addr_width}
-	set_component_parameter_value MONITOR_0_MEM_AXI4_AWID_WIDTH {2}
+	set_component_parameter_value MONITOR_0_MEM_AXI4_AWID_WIDTH {5}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_AWUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_BUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_RDATA_WIDTH ${emif_data_width}
@@ -609,10 +609,10 @@ proc instantiate_pmon {} {
 	load_instantiation $pmon_inst
 	set_instantiation_interface_parameter_value src_axi4 combinedIssuingCapability {32}
 	set_instantiation_interface_parameter_value src_axi4 readIssuingCapability {32}
-	set_instantiation_interface_parameter_value src_axi4 writeIssuingCapability {32} 
+	set_instantiation_interface_parameter_value src_axi4 writeIssuingCapability {32}
 	set_instantiation_interface_parameter_value sink_axi4 combinedAcceptanceCapability {32}
 	set_instantiation_interface_parameter_value sink_axi4 readAcceptanceCapability {32}
-	set_instantiation_interface_parameter_value sink_axi4 writeAcceptanceCapability {32} 
+	set_instantiation_interface_parameter_value sink_axi4 writeAcceptanceCapability {32}
 	save_instantiation
 }
 

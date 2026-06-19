@@ -1,4 +1,4 @@
-package require -exact qsys 25.3
+package require -exact qsys 26.1
 
 proc do_create_system {} {
 	# system name
@@ -15,7 +15,7 @@ proc do_create_system {} {
 	set_module_property FILE ${system_name}.qsys
 	set_module_property GENERATION_ID {0x00000000}
 	set_module_property NAME ${system_name}
-	
+
     # Name of components
 	set jtag_address_span_extender_inst "jtag_address_span_extender"
 	set emif_address_span_extender_inst "emif_address_span_extender"
@@ -134,7 +134,7 @@ proc do_create_system {} {
 	set_interface_property reset_handler_reset_n_1 EXPORT_OF ${reset_handler}.reset_n_1
 	set_interface_property ${dla_pll}_refclk EXPORT_OF ${dla_pll}.refclk
 	set_interface_property ${jtag_pll}_refclk EXPORT_OF ${jtag_pll}.refclk
-	set_interface_property ${csr_data_bridge}_m0 EXPORT_OF ${csr_data_bridge}.m0 
+	set_interface_property ${csr_data_bridge}_m0 EXPORT_OF ${csr_data_bridge}.m0
 	set_interface_property ${emif_data_bridge}_s0 EXPORT_OF ${emif_data_bridge}.s0
 	set_interface_property ${emif_clk_bridge}_out_clk EXPORT_OF ${emif_clk_bridge}.out_clk
 	set_interface_property ${shell_usr_clk_bridge}_out_clk EXPORT_OF ${shell_usr_clk_bridge}.out_clk
@@ -286,14 +286,14 @@ proc instantiate_emif_bridge {} {
 	set_component_parameter_value DATA_WIDTH $emif_data_width
 	set_component_parameter_value ENABLE_CONCURRENT_SUBORDINATE_ACCESS {0}
 	set_component_parameter_value ENABLE_OOO {0}
-	set_component_parameter_value M0_ID_WIDTH {2}
+	set_component_parameter_value M0_ID_WIDTH {5}
 	set_component_parameter_value NO_REPEATED_IDS_BETWEEN_SUBORDINATES {0}
 	set_component_parameter_value READ_ACCEPTANCE_CAPABILITY {64}
 	set_component_parameter_value READ_ADDR_USER_WIDTH {2}
 	set_component_parameter_value READ_DATA_REORDERING_DEPTH {1}
 	set_component_parameter_value READ_DATA_USER_WIDTH {2}
 	set_component_parameter_value READ_ISSUING_CAPABILITY {64}
-	set_component_parameter_value S0_ID_WIDTH {2}
+	set_component_parameter_value S0_ID_WIDTH {5}
 	set_component_parameter_value SAI_WIDTH {1}
 	set_component_parameter_value SYNC_RESET {0}
 	set_component_parameter_value USE_M0_ADDRCHK {0}
@@ -357,10 +357,10 @@ proc instantiate_emif_bridge {} {
 	set_component_parameter_value WRITE_RESP_USER_WIDTH {2}
 	set_component_project_property HIDE_FROM_IP_CATALOG {false}
 	save_component
-} 
+}
 
 proc instantiate_emif {} {
-	# Instantiate a x32 DDR4 interface 
+	# Instantiate a x32 DDR4 interface
 	# DDR4 interface is physical bank 2B
 	upvar emif emif
 	upvar emif_ddr4_phy_freq_mhz emif_ddr4_phy_freq_mhz
@@ -393,7 +393,7 @@ proc instantiate_emif {} {
 	set_component_parameter_value EX_DESIGN_USER_PLL_REFCLK_FREQ_MHZ {100.0}
 	set_component_parameter_value INSTANCE_ID {0}
 	set_component_parameter_value IS_HPS {0}
-	set_component_parameter_value JEDEC_OVERRIDE_TABLE_PARAM_NAME {MEM_CL_CYC MEM_CWL_CYC MEM_TRFC_NS MEM_TRFC_DLR_NS MEM_TRRD_DLR_NS MEM_TFAW_DLR_NS MEM_TCCD_DLR_NS}
+	set_component_parameter_value JEDEC_OVERRIDE_TABLE_PARAM_NAME {MEM_CL_CYC MEM_CWL_CYC MEM_TRFC_NS }
 	set_component_parameter_value MEM_AC_MIRRORING_EN {0}
 	set_component_parameter_value MEM_AC_PARITY_EN {0}
 	set_component_parameter_value MEM_AC_PARITY_LATENCY_MODE {0.0}
@@ -422,7 +422,6 @@ proc instantiate_emif {} {
 	set_component_parameter_value MEM_RANKS_SHARE_CK_EN {0}
 	set_component_parameter_value MEM_RD_PREAMBLE_MODE {1.0}
 	set_component_parameter_value MEM_SPEEDBIN {3200AA}
-	set_component_parameter_value MEM_TCCD_DLR_NS {5.0}
 	set_component_parameter_value MEM_TCCD_L_NS {6.25}
 	set_component_parameter_value MEM_TCCD_S_NS {5.0}
 	set_component_parameter_value MEM_TCKESR_CYC {5.0}
@@ -434,7 +433,6 @@ proc instantiate_emif {} {
 	set_component_parameter_value MEM_TCPDED_NS {5.0}
 	set_component_parameter_value MEM_TDQSCK_MAX_MIN_NS {0.16}
 	set_component_parameter_value MEM_TDQSCK_NS {0.0}
-	set_component_parameter_value MEM_TFAW_DLR_NS {20.0}
 	set_component_parameter_value MEM_TFAW_NS {25.0}
 	set_component_parameter_value MEM_TMOD_NS {30.0}
 	set_component_parameter_value MEM_TMPRR_NS {1.25}
@@ -445,10 +443,8 @@ proc instantiate_emif {} {
 	set_component_parameter_value MEM_TRCD_NS {13.75}
 	set_component_parameter_value MEM_TRC_NS {45.75}
 	set_component_parameter_value MEM_TREFI_NS {7800.0}
-	set_component_parameter_value MEM_TRFC_DLR_NS {190.0}
 	set_component_parameter_value MEM_TRFC_NS {350.0}
 	set_component_parameter_value MEM_TRP_NS {13.75}
-	set_component_parameter_value MEM_TRRD_DLR_NS {5.0}
 	set_component_parameter_value MEM_TRRD_L_NS {5.0}
 	set_component_parameter_value MEM_TRRD_S_NS {5.0}
 	set_component_parameter_value MEM_TRTP_NS {7.5}
@@ -506,7 +502,7 @@ proc instantiate_emif {} {
 	load_instantiation ${emif}
 	set_instantiation_interface_parameter_value s0_axi4 combinedAcceptanceCapability {64}
 	set_instantiation_interface_parameter_value s0_axi4 readAcceptanceCapability {64}
-	set_instantiation_interface_parameter_value s0_axi4 writeAcceptanceCapability {64} 
+	set_instantiation_interface_parameter_value s0_axi4 writeAcceptanceCapability {64}
 	save_instantiation
 }
 
@@ -577,10 +573,10 @@ proc instantiate_pmon {} {
 	set_component_parameter_value LOG_PRINT_ALL {0}
 	set_component_parameter_value MONITOR_0_ADVANCED_LAT {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_ARADDR_WIDTH ${emif_addr_width}
-	set_component_parameter_value MONITOR_0_MEM_AXI4_ARID_WIDTH {2}
+	set_component_parameter_value MONITOR_0_MEM_AXI4_ARID_WIDTH {5}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_ARUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_AWADDR_WIDTH ${emif_addr_width}
-	set_component_parameter_value MONITOR_0_MEM_AXI4_AWID_WIDTH {2}
+	set_component_parameter_value MONITOR_0_MEM_AXI4_AWID_WIDTH {5}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_AWUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_BUSER_WIDTH {0}
 	set_component_parameter_value MONITOR_0_MEM_AXI4_RDATA_WIDTH ${emif_data_width}
@@ -606,10 +602,10 @@ proc instantiate_pmon {} {
 	load_instantiation $pmon_inst
 	set_instantiation_interface_parameter_value src_axi4 combinedIssuingCapability {32}
 	set_instantiation_interface_parameter_value src_axi4 readIssuingCapability {32}
-	set_instantiation_interface_parameter_value src_axi4 writeIssuingCapability {32} 
+	set_instantiation_interface_parameter_value src_axi4 writeIssuingCapability {32}
 	set_instantiation_interface_parameter_value sink_axi4 combinedAcceptanceCapability {32}
 	set_instantiation_interface_parameter_value sink_axi4 readAcceptanceCapability {32}
-	set_instantiation_interface_parameter_value sink_axi4 writeAcceptanceCapability {32} 
+	set_instantiation_interface_parameter_value sink_axi4 writeAcceptanceCapability {32}
 	save_instantiation
 }
 

@@ -71,10 +71,11 @@ logic        [C_DDR_AXI_ADDR_WIDTH-1:0] ddr_araddr;
 logic      [AXI_BURST_LENGTH_WIDTH-1:0] ddr_arlen;
 logic        [AXI_BURST_SIZE_WIDTH-1:0] ddr_arsize;
 logic        [AXI_BURST_TYPE_WIDTH-1:0] ddr_arburst;
-logic   [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_arid;
+logic   [C_DDR_AXI_READ_ID_WIDTH-1:0] ddr_arid;
+logic   [C_DDR_AXI_WRITE_ID_WIDTH-1:0] ddr_awid;
 logic                                   ddr_rvalid, ddr_rready;
 logic        [C_DDR_AXI_DATA_WIDTH-1:0] ddr_rdata;
-logic   [C_DDR_AXI_THREAD_ID_WIDTH-1:0] ddr_rid;
+logic   [C_DDR_AXI_READ_ID_WIDTH-1:0] ddr_rid;
 logic                                   ddr_awvalid, ddr_awready;
 logic        [C_DDR_AXI_ADDR_WIDTH-1:0] ddr_awaddr;
 logic      [AXI_BURST_LENGTH_WIDTH-1:0] ddr_awlen;
@@ -122,7 +123,8 @@ dla_platform_wrapper #(
   .C_DDR_AXI_ADDR_WIDTH (C_DDR_AXI_ADDR_WIDTH),         //width of all byte address signals to global memory, 32 would allow 4 GB of addressable memory
   .C_DDR_AXI_BURST_WIDTH (C_DDR_AXI_BURST_WIDTH),        //internal width of the axi burst length signal, typically 4, max number of words in a burst = 2**DDR_BURST_WIDTH
   .C_DDR_AXI_DATA_WIDTH (C_DDR_AXI_DATA_WIDTH),         //width of the global memory data path, typically 64 bytes
-  .C_DDR_AXI_THREAD_ID_WIDTH (C_DDR_AXI_THREAD_ID_WIDTH),    //width of the axi id signal for reads, need enough bits to uniquely identify which master a request came from
+  .C_DDR_AXI_READ_ID_WIDTH (C_DDR_AXI_READ_ID_WIDTH),    //width of the axi id signal for reads, need enough bits to uniquely identify which master a request came from
+  .C_DDR_AXI_WRITE_ID_WIDTH (C_DDR_AXI_WRITE_ID_WIDTH),    //width of the axi id signal for writes, need to match the ones issued by the DLA. Varying AWID theoretically can improve EMIF efficiency.
   .MAX_DLA_INSTANCES (MAX_DLA_INSTANCES),            //maximum number of DLA instances defined by the number of CSR and DDR interfaces provided by the BSP
   .HW_TIMER_WIDTH (HW_TIMER_WIDTH),               //width of the hw timer counter, for inferring CoreDLA clock frequency from host
   .ENABLE_INPUT_STREAMING (ENABLE_INPUT_STREAMING),       //AXI-s input-enable toggle
@@ -178,6 +180,7 @@ dla_platform_wrapper #(
   .o_ddr_awaddr                                 ({ddr_awaddr}),
   .o_ddr_awlen                                  ({ddr_awlen}),
   .o_ddr_awsize                                 ({ddr_awsize}),
+  .o_ddr_awid                                   ({ddr_awid}),
   .o_ddr_awburst                                ({ddr_awburst}),
   .i_ddr_awready                                ({ddr_awready}),
   .o_ddr_wvalid                                 ({ddr_wvalid}),
@@ -222,7 +225,7 @@ shell pd (
   .emif_0_mem_0_mem_dqs_c            (io_ddr4_comp1_dqs_n),
   .emif_0_oct_0_oct_rzqin            (i_ddr4_comp1_rzq),
 
-  .emif_data_bridge_0_s0_awid                  (2'd0),               //  input,    width = 2
+  .emif_data_bridge_0_s0_awid                  (ddr_awid),               //  input,    width = 5
   .emif_data_bridge_0_s0_awaddr                ({1'b0, ddr_awaddr}),         //   input,   width = 33, so need to pad DLA.araddr
   .emif_data_bridge_0_s0_awlen                 (ddr_awlen),          //   input,    width = 8
   .emif_data_bridge_0_s0_awsize                (ddr_awsize),         //   input,    width = 3

@@ -25,7 +25,12 @@ module dla_platform_wrapper #(
   parameter int C_DDR_AXI_ADDR_WIDTH,         //width of all byte address signals to global memory, 32 would allow 4 GB of addressable memory
   parameter int C_DDR_AXI_BURST_WIDTH,        //internal width of the axi burst length signal, typically 4, max number of words in a burst = 2**DDR_BURST_WIDTH
   parameter int C_DDR_AXI_DATA_WIDTH,         //width of the global memory data path, typically 64 bytes
-  parameter int C_DDR_AXI_THREAD_ID_WIDTH,    //width of the axi id signal for reads, need enough bits to uniquely identify which master a request came from
+  // The following AXI ID parameters should only pertain C_DDR_AXI_READ_ID_WIDTH and C_DDR_AXI_WRITE_ID_WIDTH.
+  // C_DDR_AXI_THREAD_ID_WIDTH is simply preserved for backward compatibility, but actually should be removed in the future.
+  // todo: C_DDR_AXI_THREAD_ID_WIDTH should be removed once DE10 Agilex's patch file is updated.
+  parameter int C_DDR_AXI_READ_ID_WIDTH = 2,    //width of the axi id signal for reads, need enough bits to uniquely identify which master a request came from
+  parameter int C_DDR_AXI_WRITE_ID_WIDTH = 2,   //width of the axi id signal for writes. Varying AXI write ID might lead to higher EMIF efficiency on Agilex 5
+  parameter int C_DDR_AXI_THREAD_ID_WIDTH = 2,    //Preserved for backward compatibility, but actually should be removed in the future.
   parameter int MAX_DLA_INSTANCES,            //maximum number of DLA instances defined by the number of CSR and DDR interfaces provided by the BSP
   parameter int HW_TIMER_WIDTH,               //width of the hw timer counter, for inferring CoreDLA clock frequency from host
   parameter int ENABLE_INPUT_STREAMING,       //AXI-s input-enable toggle
@@ -76,16 +81,17 @@ module dla_platform_wrapper #(
   output logic     [AXI_BURST_LENGTH_WIDTH-1:0] o_ddr_arlen   [MAX_DLA_INSTANCES],
   output logic       [AXI_BURST_SIZE_WIDTH-1:0] o_ddr_arsize  [MAX_DLA_INSTANCES],
   output logic       [AXI_BURST_TYPE_WIDTH-1:0] o_ddr_arburst [MAX_DLA_INSTANCES],
-  output logic  [C_DDR_AXI_THREAD_ID_WIDTH-1:0] o_ddr_arid    [MAX_DLA_INSTANCES],
+  output logic  [C_DDR_AXI_READ_ID_WIDTH-1:0] o_ddr_arid    [MAX_DLA_INSTANCES],
   input  wire                                   i_ddr_arready [MAX_DLA_INSTANCES],
   input  wire                                   i_ddr_rvalid  [MAX_DLA_INSTANCES],
   input  wire        [C_DDR_AXI_DATA_WIDTH-1:0] i_ddr_rdata   [MAX_DLA_INSTANCES],
-  input  wire   [C_DDR_AXI_THREAD_ID_WIDTH-1:0] i_ddr_rid     [MAX_DLA_INSTANCES],
+  input  wire   [C_DDR_AXI_READ_ID_WIDTH-1:0] i_ddr_rid     [MAX_DLA_INSTANCES],
   output logic                                  o_ddr_rready  [MAX_DLA_INSTANCES],
   output logic                                  o_ddr_awvalid [MAX_DLA_INSTANCES],
   output logic       [C_DDR_AXI_ADDR_WIDTH-1:0] o_ddr_awaddr  [MAX_DLA_INSTANCES],
   output logic     [AXI_BURST_LENGTH_WIDTH-1:0] o_ddr_awlen   [MAX_DLA_INSTANCES],
   output logic       [AXI_BURST_SIZE_WIDTH-1:0] o_ddr_awsize  [MAX_DLA_INSTANCES],
+  output logic       [C_DDR_AXI_WRITE_ID_WIDTH-1:0] o_ddr_awid    [MAX_DLA_INSTANCES],
   output logic       [AXI_BURST_TYPE_WIDTH-1:0] o_ddr_awburst [MAX_DLA_INSTANCES],
   input  wire                                   i_ddr_awready [MAX_DLA_INSTANCES],
   output logic                                  o_ddr_wvalid  [MAX_DLA_INSTANCES],
@@ -279,6 +285,7 @@ module dla_platform_wrapper #(
     .o_ddr_awaddr                   (o_ddr_awaddr[0]),
     .o_ddr_awlen                    (o_ddr_awlen[0]),
     .o_ddr_awsize                   (o_ddr_awsize[0]),
+    .o_ddr_awid                     (o_ddr_awid[0]),
     .o_ddr_awburst                  (o_ddr_awburst[0]),
     .i_ddr_awready                  (i_ddr_awready[0]),
     .o_ddr_wvalid                   (o_ddr_wvalid[0]),
@@ -292,16 +299,15 @@ module dla_platform_wrapper #(
     // AXI-s input signals
     .i_istream_axi_t_valid          (i_istream_axi_t_valid[0]),
     .o_istream_axi_t_ready          (o_istream_axi_t_ready[0]),
-    .i_istream_axi_t_data           (i_istream_axi_t_data[0]), 
+    .i_istream_axi_t_data           (i_istream_axi_t_data[0]),
 
     // AXI-s output signals
     .o_ostream_axi_t_valid          (o_ostream_axi_t_valid[0]),
     .i_ostream_axi_t_ready          (i_ostream_axi_t_ready[0]),
     .o_ostream_axi_t_last           (o_ostream_axi_t_last[0]),
-    .o_ostream_axi_t_data           (o_ostream_axi_t_data[0]), 
+    .o_ostream_axi_t_data           (o_ostream_axi_t_data[0]),
     .o_ostream_axi_t_strb           (o_ostream_axi_t_strb[0])
   );
-
 // Copyright 2020 Altera Corporation.
 //
 // This software and the related documents are Altera copyrighted materials,
@@ -358,6 +364,7 @@ module dla_platform_wrapper #(
     .o_ddr_awaddr                   (o_ddr_awaddr[1]),
     .o_ddr_awlen                    (o_ddr_awlen[1]),
     .o_ddr_awsize                   (o_ddr_awsize[1]),
+    .o_ddr_awid                     (o_ddr_awid[1]),
     .o_ddr_awburst                  (o_ddr_awburst[1]),
     .i_ddr_awready                  (i_ddr_awready[1]),
     .o_ddr_wvalid                   (o_ddr_wvalid[1]),
@@ -371,16 +378,15 @@ module dla_platform_wrapper #(
     // AXI-s input signals
     .i_istream_axi_t_valid          (i_istream_axi_t_valid[1]),
     .o_istream_axi_t_ready          (o_istream_axi_t_ready[1]),
-    .i_istream_axi_t_data           (i_istream_axi_t_data[1]), 
+    .i_istream_axi_t_data           (i_istream_axi_t_data[1]),
 
     // AXI-s output signals
     .o_ostream_axi_t_valid          (o_ostream_axi_t_valid[1]),
     .i_ostream_axi_t_ready          (i_ostream_axi_t_ready[1]),
     .o_ostream_axi_t_last           (o_ostream_axi_t_last[1]),
-    .o_ostream_axi_t_data           (o_ostream_axi_t_data[1]), 
+    .o_ostream_axi_t_data           (o_ostream_axi_t_data[1]),
     .o_ostream_axi_t_strb           (o_ostream_axi_t_strb[1])
   );
-
 // Copyright 2020 Altera Corporation.
 //
 // This software and the related documents are Altera copyrighted materials,
@@ -437,6 +443,7 @@ module dla_platform_wrapper #(
     .o_ddr_awaddr                   (o_ddr_awaddr[2]),
     .o_ddr_awlen                    (o_ddr_awlen[2]),
     .o_ddr_awsize                   (o_ddr_awsize[2]),
+    .o_ddr_awid                     (o_ddr_awid[2]),
     .o_ddr_awburst                  (o_ddr_awburst[2]),
     .i_ddr_awready                  (i_ddr_awready[2]),
     .o_ddr_wvalid                   (o_ddr_wvalid[2]),
@@ -450,16 +457,15 @@ module dla_platform_wrapper #(
     // AXI-s input signals
     .i_istream_axi_t_valid          (i_istream_axi_t_valid[2]),
     .o_istream_axi_t_ready          (o_istream_axi_t_ready[2]),
-    .i_istream_axi_t_data           (i_istream_axi_t_data[2]), 
+    .i_istream_axi_t_data           (i_istream_axi_t_data[2]),
 
     // AXI-s output signals
     .o_ostream_axi_t_valid          (o_ostream_axi_t_valid[2]),
     .i_ostream_axi_t_ready          (i_ostream_axi_t_ready[2]),
     .o_ostream_axi_t_last           (o_ostream_axi_t_last[2]),
-    .o_ostream_axi_t_data           (o_ostream_axi_t_data[2]), 
+    .o_ostream_axi_t_data           (o_ostream_axi_t_data[2]),
     .o_ostream_axi_t_strb           (o_ostream_axi_t_strb[2])
   );
-
 // Copyright 2020 Altera Corporation.
 //
 // This software and the related documents are Altera copyrighted materials,
@@ -516,6 +522,7 @@ module dla_platform_wrapper #(
     .o_ddr_awaddr                   (o_ddr_awaddr[3]),
     .o_ddr_awlen                    (o_ddr_awlen[3]),
     .o_ddr_awsize                   (o_ddr_awsize[3]),
+    .o_ddr_awid                     (o_ddr_awid[3]),
     .o_ddr_awburst                  (o_ddr_awburst[3]),
     .i_ddr_awready                  (i_ddr_awready[3]),
     .o_ddr_wvalid                   (o_ddr_wvalid[3]),
@@ -529,15 +536,14 @@ module dla_platform_wrapper #(
     // AXI-s input signals
     .i_istream_axi_t_valid          (i_istream_axi_t_valid[3]),
     .o_istream_axi_t_ready          (o_istream_axi_t_ready[3]),
-    .i_istream_axi_t_data           (i_istream_axi_t_data[3]), 
+    .i_istream_axi_t_data           (i_istream_axi_t_data[3]),
 
     // AXI-s output signals
     .o_ostream_axi_t_valid          (o_ostream_axi_t_valid[3]),
     .i_ostream_axi_t_ready          (i_ostream_axi_t_ready[3]),
     .o_ostream_axi_t_last           (o_ostream_axi_t_last[3]),
-    .o_ostream_axi_t_data           (o_ostream_axi_t_data[3]), 
+    .o_ostream_axi_t_data           (o_ostream_axi_t_data[3]),
     .o_ostream_axi_t_strb           (o_ostream_axi_t_strb[3])
   );
-
 
 endmodule

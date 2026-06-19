@@ -6,7 +6,7 @@ of example design.
 
 > [!TIP]
 > You can find an up-to-date list of supported OMZ models in the
-> [FPGA AI Suite: IP Reference Manual](https://www.intel.com/content/www/us/en/docs/programmable/768974/2025-1/supported-models.html)
+> [FPGA AI Suite: IP Reference Manual](https://docs.altera.com/r/docs/863373//fpga-ai-suite-handbook/supported-models)
 
 ## Model Zoo Setup
 

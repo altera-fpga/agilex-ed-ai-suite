@@ -6,13 +6,13 @@
 
 # Check if exactly three arguments are provided
 proc unix_compile_script {project_name revision_name family_name device_name} {
-    qexec "qsys-generate -syn --family=\"$family_name\" --part=$device_name board.qsys 2>&1 | tee qsys_generate.log"
-    qexec "qsys-archive --quartus-project=$project_name --rev=opencl_bsp_ip --add-to-project board.qsys 2>&1 | tee qsys_archive.log"
-    qexec "quartus_syn --read_settings_files=off --write_settings_files=off $project_name -c $revision_name 2>&1 | tee quartus_syn.log"
-    qexec "quartus_fit --read_settings_files=on --write_settings_files=off $project_name -c $revision_name 2>&1 | tee quartus_fit.log"
-    qexec "quartus_sta $project_name -c $revision_name --mode=finalize --do_report_timing 2>&1 | tee quartus_sta.log"
-    qexec "quartus_cdb -t dla_adjust_pll.tcl 2>&1 | tee dla_adjust_pll.log"
-    qexec "quartus_asm --read_settings_files=on --write_settings_files=off $project_name -c $revision_name 2>&1 | tee quartus_asm.log"
+    qexec "qsys-generate -syn --family=\"$family_name\" --part=$device_name board.qsys 2>&1"
+    qexec "qsys-archive --quartus-project=$project_name --rev=opencl_bsp_ip --add-to-project board.qsys 2>&1"
+    qexec "quartus_syn --read_settings_files=off --write_settings_files=off $project_name -c $revision_name 2>&1"
+    qexec "quartus_fit --read_settings_files=on --write_settings_files=off $project_name -c $revision_name 2>&1"
+    qexec "quartus_sta $project_name -c $revision_name --mode=finalize --do_report_timing 2>&1"
+    qexec "quartus_cdb -t dla_adjust_pll.tcl 2>&1"
+    qexec "quartus_asm --read_settings_files=on --write_settings_files=off $project_name -c $revision_name 2>&1"
 }
 
 

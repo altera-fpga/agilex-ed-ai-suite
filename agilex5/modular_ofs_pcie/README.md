@@ -4,7 +4,7 @@ Demonstrates ML inference using the Agilex 5 FPGA E-Series 065B Modular Developm
 
 ## Description
 
-This example design demonstrates how to run the AI Suite on an Agilex 5 Intel
+This example design demonstrates how to run the AI Suite on an Altera Agilex 5
 Modular Development Kit connected to a host via PCIe.
 The example design uses the `AGX5_Generic.arch` architecture.
 
@@ -12,15 +12,17 @@ The example design uses the `AGX5_Generic.arch` architecture.
 ## Requirements
 
 > Please refer to
-> [[OFS-PCIE] Getting Started with Open FPGA Stack (OFS) for PCIe Attach Design Examples](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/getting-started-with-for-attach-design.html)
-> in the [Design Examples User Guide](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/design-examples-user-guide.html)
-> for more details.
+> [[OFS-PCIE] Setup the OFS Environment for the FPGA Device in the OFS for PCIe-Attach Design Example](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/setup-the-ofs-environment-for-the-fpga-device-in-the-ofs-for-pcie-attach-design-example)
+> section of the
+> [FPGA AI Suite Handbook](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-handbook)
+> for the setup instructions.
+> The above documentation specifies additional OFS installation and configuration steps for OPAE and DFL
 
-* AI Suite 2025.3
+* AI Suite 2026.1.1
 * Quartus Prime 25.1
     * Agilex 5 device support
     * Agilex common files
-* OpenVINO 2024.6.0 Runtime
+* OpenVINO 2025.4.0 Runtime
 * [OFS 2025.1-1 Modular Development Kit FIM](https://github.com/OFS/ofs-agx5-pcie-attach/releases/download/ofs-2025.1-1/eseries-mdk-images_ofs-2025-1-1.tar.gz)
 * [OPAE 2.13.0-2 Driver](https://github.com/OFS/opae-sdk/releases/tag/2.13.0-2)
 
@@ -34,8 +36,8 @@ Compile the Quartus project with
 
 ```bash
 # Enable the OpenVINO and the AI Suite environments
-source /opt/intel/openvino_2024.6.0/setupvars.sh
-source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+source /opt/intel/openvino_2025.4.0/setupvars.sh
+source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 
 # If OPAE has been installed into the default location, use:
 export OPAE_SDK_ROOT=/usr
@@ -58,7 +60,7 @@ The `dla_afu.gbs` bitstream file will be located in the
 
 > [!NOTE]
 > This is a condensed version of the
-> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/quick-start-tutorial.html).
+> [FPGA AI Suite Quick Start Tutorial](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-quick-start-tutorial).
 > If you're using a pre-compiled bitstream then replace any paths to
 > `dla_afu.gbs` with the location where you saved
 > `agx5e_modular_ofs_pcie.gbs`.
@@ -99,8 +101,8 @@ omz_converter --name resnet-50-tf --download_dir ../models --output_dir ../model
 > your local environment again with:
 >
 > ```shell
-> source /opt/intel/openvino_2024.6.0/setupvars.sh
-> source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+> source /opt/intel/openvino_2025.4.0/setupvars.sh
+> source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 > ```
 
 We will now run inference with this model.  It is located in
@@ -162,7 +164,7 @@ dla_compiler \
     --march $COREDLA_ROOT/example_architectures/AGX5_Generic.arch \
     --foutput-format open_vino_hetero \
     --network-file $COREDLA_WORK/demo/models/public/resnet-50-tf/FP32/resnet-50-tf.xml \
-    --o $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    --o $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     --batch-size=1 \
     --fanalyze-performance
 
@@ -172,7 +174,7 @@ fpgaconf -V $EXAMPLES_PATH/agilex5/modular_ofs_pcie/ofs/dla_afu.gbs
 # Run inference in AOT mode
 ./build_Release/dla_benchmark/dla_benchmark \
     -b=1 \
-    -cm $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    -cm $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     -d=HETERO:FPGA,CPU \
     -niter=8 \
     -plugins $COREDLA_WORK/runtime/build_Release/plugins.xml \
@@ -182,3 +184,4 @@ fpgaconf -V $EXAMPLES_PATH/agilex5/modular_ofs_pcie/ofs/dla_afu.gbs
     -i $COREDLA_WORK/demo/sample_images \
     -groundtruth_loc $COREDLA_WORK/demo/sample_images/TF_ground_truth.txt
 ```
+

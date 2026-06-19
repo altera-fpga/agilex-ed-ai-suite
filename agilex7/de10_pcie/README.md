@@ -18,15 +18,16 @@ uses the `AGX7_Generic.arch` architecture.
 > not done.
 >
 > Please refer to the
-> [Installing the FPGA AI Suite PCIe-Based Design Example Prerequisites](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-the-pcie-based-design-example.html)
-> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html)
+https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/pcie-design-example-prerequisites
+> [PCIe-Based Design Example Prerequisites](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/pcie-design-example-prerequisites)
+> of the [FPGA AI Suite Handbook](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-handbook)
 > for the setup instructions.
 
-* AI Suite 2025.3
-* Quartus Prime 25.3
+* AI Suite 2026.1.1
+* Quartus Prime 26.1
     * Agilex 7 device support
     * Agilex common files
-* OpenVINO 2024.6.0 Runtime
+* OpenVINO 2025.4.0 Runtime
 * Terasic BSP
 
 ## Compiling (Optional)
@@ -39,8 +40,8 @@ Compile the Quartus project with
 
 ```bash
 # Enable the OpenVINO and the AI Suite environments
-source /opt/intel/openvino_2024.6.0/setupvars.sh
-source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+source /opt/intel/openvino_2025.4.0/setupvars.sh
+source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 
 # Prepare and compile the Quartus project.
 cd $EXAMPLES_PATH/agilex7/de10_pcie
@@ -55,16 +56,16 @@ The bitstream file, `flat.sof`, will be located in
 `$EXAMPLES_PATH/agilex7/de10_pcie/flat.sof`.
 > [!NOTE]
 > You must also export the Quartus license, QUARTUS_ROOTDIR, quartus and qsys environment variables to your PATH.
-> Please refer to the [Installing Quartus Prime Pro Edition Software](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-software.html)
-> and the [Additional Software Prerequisites for the PCIe-based Design Example](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/additional-software-prerequisites-for.html)
-> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html)
+> Please refer to the [Installing Quartus Prime Pro Edition Software](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/installing-quartus-prime-pro-edition-software)
+> and the [Additional Software Prerequisites for the PCIe-based Design Example](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/additional-software-prerequisites-for-the-fpga-ai-suite-pcie-design-example-for-agilextm-7-devices)
+> of the [FPGA AI Suite Handbook](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-handbook)
 > for the setup instructions.
 
 ## Running Inference
 
 > [!NOTE]
 > This is a condensed version of the
-> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/quick-start-tutorial.html).
+> [FPGA AI Suite Quick Start Tutorial](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-quick-start-tutorial).
 > If you're using a pre-compiled bitstream then replace any paths to
 > `flat.sof` with the location where you saved
 > `agx7_de10_pcie.sof`.
@@ -105,8 +106,8 @@ omz_converter --name resnet-50-tf --download_dir ../models --output_dir ../model
 > your local environment again with:
 >
 > ```shell
-> source /opt/intel/openvino_2024.6.0/setupvars.sh
-> source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+> source /opt/intel/openvino_2025.4.0/setupvars.sh
+> source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 > ```
 
 We will now run inference with this model.  It is located in
@@ -164,7 +165,7 @@ dla_compiler \
     --march $COREDLA_ROOT/example_architectures/AGX7_Generic.arch \
     --foutput-format open_vino_hetero \
     --network-file $COREDLA_WORK/demo/models/public/resnet-50-tf/FP32/resnet-50-tf.xml \
-    --o $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    --o $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     --batch-size=1 \
     --fanalyze-performance
 
@@ -174,7 +175,7 @@ dla_compiler \
 # Run inference in AOT mode
 ./build_Release/dla_benchmark/dla_benchmark \
     -b=1 \
-    -cm $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    -cm $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     -d=HETERO:FPGA,CPU \
     -niter=8 \
     -plugins $COREDLA_WORK/runtime/build_Release/plugins.xml \
@@ -184,3 +185,4 @@ dla_compiler \
     -i $COREDLA_WORK/demo/sample_images \
     -groundtruth_loc $COREDLA_WORK/demo/sample_images/TF_ground_truth.txt
 ```
+

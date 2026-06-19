@@ -174,7 +174,7 @@ namespace eval DLA {
         close $fileId
 
         # Extract the clock refrequency
-        set pattern {clock-frequency-low:(\d+)}
+        set pattern {clock-frequency-high:(\d+)}
         set extractedValue ""
         if {[regexp $pattern $fileContents match value]} {
             set extractedValue $value

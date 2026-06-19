@@ -1,0 +1,132 @@
+# +-----------------------------------
+# |
+# | {{ display_name }}
+# | Altera {{ year }}
+# |
+# |    ./{{ top_wrapper_file_name }} syn, sim
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | required packages
+# |
+{%- for requirement in package_requirements %}
+package require {{ requirement }}
+{%- endfor %}
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | module sw_reset
+# |
+set_module_property DESCRIPTION "{{ ip_description }}"
+set_module_property NAME {{ ip_name }}
+set_module_property VERSION {{ version }}
+set_module_property DISPLAY_NAME "{{ display_name }}"
+set_module_property AUTHOR "Altera Corporation"
+set_module_property ICON_PATH logo.jpg
+set_module_property TOP_LEVEL_HDL_FILE {{ top_wrapper_file_name }}
+set_module_property TOP_LEVEL_HDL_MODULE {{ top_level_module_name }}
+set_module_property INSTANTIATE_IN_SYSTEM_MODULE true
+set_module_property EDITABLE false
+set_module_property ANALYZE_HDL false
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | files
+# |
+add_file {{ top_wrapper_file_name }} {SYNTHESIS SIMULATION}
+add_file {{ top_level_file_name }} {SYNTHESIS SIMULATION}
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | connection point aclk
+# |
+add_interface aclk clock end
+set_interface_property aclk ENABLED true
+add_interface_port aclk aclk clk Input 1
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | connection point aresetn
+# |
+add_interface aresetn reset end
+set_interface_property aresetn associatedClock aclk
+set_interface_property aresetn synchronousEdges DEASSERT
+set_interface_property aresetn ENABLED true
+add_interface_port aresetn aresetn reset_n Input 1
+# |
+# +-----------------------------------
+
+{%- if render_weights_ports %}
+# +-----------------------------------
+# | connection point weights (axi-st sink)
+# |
+add_interface weights axi4stream sink
+set_interface_property weights associatedClock aclk
+set_interface_property weights associatedReset aresetn
+set_interface_property weights ENABLED true
+{%- for port in weights_ports %}
+add_interface_port weights {{ port.name }} {{ port.type }} {{ port.direction }} {{ port.width }}
+{%- endfor %}
+# |
+# +-----------------------------------
+{%- endif %}
+
+# +-----------------------------------
+# | connection point inputs (axi-st sink)
+# |
+add_interface inputs axi4stream sink
+set_interface_property inputs associatedClock aclk
+set_interface_property inputs associatedReset aresetn
+set_interface_property inputs ENABLED true
+add_interface_port inputs s_axis_tdata tdata Input {{ input_data_width }}
+add_interface_port inputs s_axis_tvalid tvalid Input 1
+add_interface_port inputs s_axis_tuser tuser Input 4
+add_interface_port inputs s_axis_tlast tlast Input 1
+add_interface_port inputs s_axis_tready tready Output 1
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | connection point outputs (axi-st source)
+# |
+add_interface outputs axi4stream source
+set_interface_property outputs associatedClock aclk
+set_interface_property outputs associatedReset aresetn
+set_interface_property outputs ENABLED true
+add_interface_port outputs m_axis_tdata tdata Output {{ output_data_width }}
+add_interface_port outputs m_axis_tvalid tvalid Output 1
+add_interface_port outputs m_axis_tuser tuser Output 4
+add_interface_port outputs m_axis_tlast tlast Output 1
+add_interface_port outputs m_axis_tready tready Input 1
+# |
+# +-----------------------------------
+
+{%- if gen_timer_interface %}
+
+# +-----------------------------------
+# | connection point timer_start (conduit for start signal)
+# |
+add_interface timer_start conduit end
+set_interface_property timer_start associatedClock aclk
+set_interface_property timer_start associatedReset aresetn
+set_interface_property timer_start ENABLED true
+add_interface_port timer_start o_timer_start export Output 1
+# |
+# +-----------------------------------
+
+# +-----------------------------------
+# | connection point timer_end (conduit for end signal)
+# |
+add_interface timer_end conduit end
+set_interface_property timer_end associatedClock aclk
+set_interface_property timer_end associatedReset aresetn
+set_interface_property timer_end ENABLED true
+add_interface_port timer_end o_timer_end export Output 1
+# |
+# +-----------------------------------
+{%- endif %}

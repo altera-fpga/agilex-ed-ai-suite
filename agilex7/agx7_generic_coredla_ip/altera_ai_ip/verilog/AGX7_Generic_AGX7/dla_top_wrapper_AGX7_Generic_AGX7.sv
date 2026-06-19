@@ -22,6 +22,8 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam string DEVICE = "AGX7",
   parameter int C_DDR_AXI_ADDR_WIDTH = 32,
   parameter int C_DDR_AXI_DATA_WIDTH = 512,
+  parameter int C_DDR_AXI_READ_ID_WIDTH = 2,
+  parameter int C_DDR_AXI_WRITE_ID_WIDTH = 2,
   parameter int C_DDR_AXI_THREAD_ID_WIDTH = 2,
   localparam int C_CSR_AXI_ADDR_WIDTH = 11,
   localparam int C_CSR_AXI_DATA_WIDTH = 32,
@@ -62,7 +64,7 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam int KVEC_OVER_CVEC = 2,
   localparam int SB_ADDR_WIDTH = 16,
   localparam int STREAM_BUFFER_DEPTH = 63488,
-  localparam bit[927:0] PE_ARRAY_PARAM_BITS = 928'h000000010000002000000001000000010000000900000009000000050000000f000000050000000f00000010000000030000000200000001000000010000000000000001000000000000000500000001000000020000000a00000004000000100000000000000001000000000000000200000003,
+  localparam bit[927:0] PE_ARRAY_PARAM_BITS = 928'h000000010000002000000001000000010000000900000009000000050000000f000000050000000f00000010000000020000000200000001000000010000000000000001000000000000000500000001000000020000000a00000004000000100000000000000001000000000000000200000003,
   localparam int PE_ARRAY_EXIT_FIFO_DEPTH = 1024,
   localparam int SCRATCHPAD_FILTER_DEPTH = 512,
   localparam int SCRATCHPAD_BIAS_SCALE_DEPTH = 512,
@@ -88,9 +90,9 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam int CONFIG_ID_OUTPUT_STREAMER_FLUSH = -1,
   localparam int CONFIG_ID_WRITER_STREAMER_SEL = -1,
   localparam int CONFIG_ID_LAYOUT_TRANSFORM = -1,
-  localparam int XBAR_ID_SOFTMAX = 3,
+  localparam int XBAR_ID_ACTIVATION = 3,
   localparam int XBAR_ID_POOL = 2,
-  localparam int XBAR_ID_ACTIVATION = 1,
+  localparam int XBAR_ID_SOFTMAX = 1,
   localparam int XBAR_ID_XBAR_OUT_PORT = 0,
   localparam int XBAR_ID_PE_ARRAY = 0,
   localparam int NUMBER_OF_KERNELS = 3,
@@ -106,7 +108,7 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam int AUX_INPUT_DATA_WIDTHS [16:0] = '{0:256,1:256,2:256,3:256,4:256,5:256,6:256,7:256,8:256,9:256,10:256,11:256,12:256,13:256,14:256,15:256,16:256,default : 0},
   localparam int AUX_MAX_DATABUS_WIDTH = 256,
   localparam int XBAR_KERNEL_CV_FEATURE_ENABLE = 1,
-  localparam int AUX_KERNEL_CONNECTIVITY_VECTOR [16:0] [16:0] = '{0: '{0:1,1:1,2:1,3:1,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},1: '{0:1,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},2: '{0:1,1:1,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},3: '{0:1,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},4: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},5: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},6: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},7: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},8: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},9: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},10: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},11: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},12: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},13: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},14: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},15: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},16: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0}},
+  localparam int AUX_KERNEL_CONNECTIVITY_VECTOR [16:0] [16:0] = '{0: '{0:1,1:1,2:1,3:1,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},1: '{0:1,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},2: '{0:1,1:0,2:0,3:1,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},3: '{0:1,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},4: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},5: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},6: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},7: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},8: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},9: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},10: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},11: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},12: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},13: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},14: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},15: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0},16: '{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0,13:0,14:0,15:0,16:0}},
   localparam int ACTIVATION_K_VECTOR = 16,
   localparam bit ACTIVATION_ENABLE_DSP_MULT = 0,
   localparam bit ACTIVATION_ENABLE_DSP_CONV = 0,
@@ -144,6 +146,7 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam int AUX_MAX_TILE_HEIGHT = 128,
   localparam int AUX_MAX_TILE_WIDTH = 128,
   localparam int AUX_MAX_TILE_CHANNELS = 16384,
+  localparam int LAYOUT_TRANSFORM_WRITEBACK_MODE = 0,
   localparam bit LAYOUT_TRANSFORM_ENABLE_IN_BIAS_SCALE = 0,
   localparam int LAYOUT_TRANSFORM_ENABLE = 0,
   localparam int LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE = 0,
@@ -163,6 +166,7 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   localparam int LAYOUT_TRANSFORM_MAX_PAD_FRONT = 1,
   localparam int LAYOUT_TRANSFORM_MAX_PAD_LEFT = 2,
   localparam int LAYOUT_TRANSFORM_MAX_PAD_TOP = 2,
+  localparam int LAYOUT_TRANSFORM_NUM_CHANNELS = 0,
   localparam int LAYOUT_TRANSFORM_MAX_FILTER_HEIGHT = 2,
   localparam int LAYOUT_TRANSFORM_MAX_FILTER_WIDTH = 2,
   localparam int LAYOUT_TRANSFORM_MAX_FILTER_DEPTH = 1,
@@ -214,17 +218,18 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
   output logic       [AXI_BURST_LENGTH_WIDTH-1:0] o_ddr_arlen,
   output logic         [AXI_BURST_SIZE_WIDTH-1:0] o_ddr_arsize,
   output logic         [AXI_BURST_TYPE_WIDTH-1:0] o_ddr_arburst,
-  output logic    [C_DDR_AXI_THREAD_ID_WIDTH-1:0] o_ddr_arid,
+  output logic      [C_DDR_AXI_READ_ID_WIDTH-1:0] o_ddr_arid,
   input  wire                                     i_ddr_arready,
   input  wire                                     i_ddr_rvalid,
   input  wire          [C_DDR_AXI_DATA_WIDTH-1:0] i_ddr_rdata,
-  input  wire     [C_DDR_AXI_THREAD_ID_WIDTH-1:0] i_ddr_rid,
+  input  wire       [C_DDR_AXI_READ_ID_WIDTH-1:0] i_ddr_rid,
   output logic                                    o_ddr_rready,
   output logic                                    o_ddr_awvalid,
   output logic         [C_DDR_AXI_ADDR_WIDTH-1:0] o_ddr_awaddr,
   output logic       [AXI_BURST_LENGTH_WIDTH-1:0] o_ddr_awlen,
   output logic         [AXI_BURST_SIZE_WIDTH-1:0] o_ddr_awsize,
   output logic         [AXI_BURST_TYPE_WIDTH-1:0] o_ddr_awburst,
+  output logic     [C_DDR_AXI_WRITE_ID_WIDTH-1:0] o_ddr_awid,
   input  wire                                     i_ddr_awready,
   output logic                                    o_ddr_wvalid,
   output logic         [C_DDR_AXI_DATA_WIDTH-1:0] o_ddr_wdata,
@@ -260,7 +265,8 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
     .DDR_ADDR_WIDTH                 (C_DDR_AXI_ADDR_WIDTH),
     .DDR_DATA_BYTES                 (C_DDR_AXI_DATA_WIDTH/8),
     .DDR_BURST_WIDTH                (C_DDR_AXI_BURST_WIDTH),
-    .DDR_READ_ID_WIDTH              (C_DDR_AXI_THREAD_ID_WIDTH),
+    .DDR_READ_ID_WIDTH              (C_DDR_AXI_READ_ID_WIDTH),
+    .DDR_WRITE_ID_WIDTH             (C_DDR_AXI_WRITE_ID_WIDTH),
     .ENABLE_ON_CHIP_PARAMETERS      (ENABLE_ON_CHIP_PARAMETERS),
 
     .KVEC_OVER_CVEC                 (KVEC_OVER_CVEC),
@@ -355,6 +361,8 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
     .AXI_OSTREAM_DEST_WIDTH         (AXI_OSTREAM_DEST_WIDTH),
     .AXI_OSTREAM_FIFO_DEPTH         (AXI_OSTREAM_FIFO_DEPTH),
 
+    .DISABLE_DDR                    (DISABLE_DDR),
+
     // Mixed Precsion switch
     .ENABLE_MIXED_PRECISION         (ENABLE_MIXED_PRECISION),
 
@@ -428,6 +436,7 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
     .LAYOUT_TRANSFORM_MAX_DILATION_DEPTH     (LAYOUT_TRANSFORM_MAX_DILATION_DEPTH),
     .LAYOUT_TRANSFORM_READER_BYTES           (LAYOUT_TRANSFORM_READER_BYTES),
     .LAYOUT_TRANSFORM_CONV_MODE              (LAYOUT_TRANSFORM_CONV_MODE),
+    .LAYOUT_TRANSFORM_NUM_CHANNELS           (LAYOUT_TRANSFORM_NUM_CHANNELS),
 
     // Lightweight (non-folding) transform
     .LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE            (LIGHTWEIGHT_LAYOUT_TRANSFORM_ENABLE),
@@ -436,7 +445,8 @@ module dla_top_wrapper_AGX7_Generic_AGX7 #(
     .LIGHTWEIGHT_LAYOUT_TRANSFORM_ELEMENT_WIDTH     (LIGHTWEIGHT_LAYOUT_TRANSFORM_ELEMENT_WIDTH),
     .LIGHTWEIGHT_LAYOUT_TRANSFORM_PIXEL_FIFO_DEPTH  (LIGHTWEIGHT_LAYOUT_TRANSFORM_PIXEL_FIFO_DEPTH),
     .LIGHTWEIGHT_LAYOUT_TRANSFORM_CONV_MODE         (LIGHTWEIGHT_LAYOUT_TRANSFORM_CONV_MODE),
-    .LIGHTWEIGHT_LAYOUT_TRANSFORM_BIAS_SCALE_ENABLE (LIGHTWEIGHT_LAYOUT_TRANSFORM_BIAS_SCALE_ENABLE)
+    .LIGHTWEIGHT_LAYOUT_TRANSFORM_BIAS_SCALE_ENABLE (LIGHTWEIGHT_LAYOUT_TRANSFORM_BIAS_SCALE_ENABLE),
+    .LAYOUT_TRANSFORM_WRITEBACK_MODE                (LAYOUT_TRANSFORM_WRITEBACK_MODE)
 )
 dla_top_inst
 (
@@ -478,6 +488,7 @@ dla_top_inst
     .o_ddr_awlen                    (o_ddr_awlen),
     .o_ddr_awsize                   (o_ddr_awsize),
     .o_ddr_awburst                  (o_ddr_awburst),
+    .o_ddr_awid                     (o_ddr_awid),
     .i_ddr_awready                  (i_ddr_awready),
     .o_ddr_wvalid                   (o_ddr_wvalid),
     .o_ddr_wdata                    (o_ddr_wdata),

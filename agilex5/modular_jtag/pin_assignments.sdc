@@ -78,3 +78,5 @@ set_location_assignment PIN_BM52  -to io_ddr4_comp1_dq[7]
 set_instance_assignment -name IO_STANDARD "1.2V TRUE DIFFERENTIAL SIGNALING" -to i_ddr4_comp1_refclk_p -entity top
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to i_clk_hvio_6a_100m -entity top
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to i_fpga_core_resetn -entity top
+set_instance_assignment -name INPUT_TERMINATION "OFF" -to i_clk_hvio_6a_100m -entity top
+set_instance_assignment -name INPUT_TERMINATION "OFF" -to i_fpga_core_resetn -entity top

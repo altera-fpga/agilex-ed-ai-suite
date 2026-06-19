@@ -5,7 +5,7 @@ Demonstrate inference over JTAG and target FPGA AI Suite IP on the Agilex 5E Mod
 ## Description
 
 This example design demonstrates how to run the AI Suite on an Altera Agilex 5
-E-Series 065B Modular Development Kit in a hostless configuration.  The example
+E-Series 065B Modular Development Kit in a hostless configuration. The example
 design supports sending inference requests via JTAG in order to demonstrate how
 commands can be sent to the AI Suite IP.
 
@@ -16,16 +16,16 @@ The example design uses the `AGX5_Generic.arch` architecture.
 
 > [!NOTE]
 > Please refer to the
-> [[HL-JTAG] Prerequisites](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/prerequisites.html)
+> [[HL-JTAG] Prerequisites](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/installing-fpga-ai-suite-design-example-prerequisites)
 > section of the
-> [Design Examples User Guide](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/design-examples-user-guide.html)
+> [FPGA AI Suite Handbook](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-handbook)
 > for the setup instructions.
 
-* AI Suite 2025.3
-* Quartus Prime 25.3
+* AI Suite 2026.1.1
+* Quartus Prime 26.1
     * Agilex 5 device support
     * Agilex common files
-* OpenVINO 2024.6.0 Runtime
+* OpenVINO 2025.4.0 Runtime
 
 ## Compiling (Optional)
 
@@ -37,8 +37,8 @@ Compile the Quartus project with
 
 ```bash
 # Enable the OpenVINO and the AI Suite environments
-source /opt/intel/openvino_2024.6.0/setupvars.sh
-source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+source /opt/intel/openvino_2025.4.0/setupvars.sh
+source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 
 # Prepare and compile the Quartus project.
 cd $EXAMPLES_PATH/agilex5/modular_jtag
@@ -52,27 +52,28 @@ The bitstream file, `top.sof`, will be located in
 `$EXAMPLES_PATH/agilex5/modular_jtag/output_files/top.sof`.
 > [!NOTE]
 > You must also export the Quartus license, QUARTUS_ROOTDIR, quartus and qsys environment variables to your PATH.
-> Please refer to the [Installing Quartus Prime Pro Edition Software](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/installing-software.html)
-> and the [Additional Software Prerequisites for the PCIe-based Design Example](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/additional-software-prerequisites-for.html)
-> of the [Getting Started Guide](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/getting-started-guide.html)
+> Please refer to the [Installing Quartus Prime Pro Edition Software](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/installing-quartus-prime-pro-edition-software)
+> and the [Additional Software Prerequisites for the PCIe-based Design Example](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/additional-software-prerequisites-for-the-fpga-ai-suite-pcie-design-example-for-agilextm-7-devices)
+> of the [FPGA AI Suite Handbook](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-handbook)
 > for the setup instructions.
 
 ## Running Inference
 
 > [!NOTE]
 > The hostless example designs provide some extra options that affect
-> inferencing beyond what is described in this section.  Please refer to
-> [[HL-JTAG] Performing Inference on the Agilex 5 FPGA E-Series 065B Modular Development Kit](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/performing-inference-on-the.html)
-> for details.
+> inferencing beyond what is described in this section.  Please refer to the
+> Agilex™ 5 FPGA E-Series 065B Modular Development Kit section in the
+> [[HL-JTAG] Performing Inference with the JTAG Design Example](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/performing-inference-with-the-jtag-design-example)
+> section for details.
 > The above documentation specifies where to set the DLA_SOF_PATH environment variable.
 
 > [!NOTE]
 > If the system-console command is not present in the $PATH environment variable. Add it at $QUARTUS_ROOTDIR/syscon/bin
-> More details can be found in the [[HL-JTAG] Known Issues and Limitations](https://www.intel.com/content/www/us/en/docs/programmable/848957/2025-3/known-issues-and-limitations.html)
+> More details can be found in the [[HL-JTAG] Known Issues and Limitations](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/jtag-design-example-known-issues-and-limitations)
 
 > [!NOTE]
 > This is a condensed version of the
-> [FPGA AI Suite Quick Start Tutorial](https://www.intel.com/content/www/us/en/docs/programmable/768970/2025-3/quick-start-tutorial.html).
+> [FPGA AI Suite Quick Start Tutorial](https://docs.altera.com/r/docs/863373/2026.1.1/fpga-ai-suite-handbook/fpga-ai-suite-quick-start-tutorial).
 > If you're using a pre-compiled bitstream then replace any paths to
 > `top.sof` with the location where you saved
 > `agx5e_modular_jtag.sof`.
@@ -113,8 +114,8 @@ omz_converter --name resnet-50-tf --download_dir ../models --output_dir ../model
 > your local environment again with:
 >
 > ```shell
-> source /opt/intel/openvino_2024.6.0/setupvars.sh
-> source /opt/altera/fpga_ai_suite_2025.3/dla/setupvars.sh
+> source /opt/intel/openvino_2025.4.0/setupvars.sh
+> source /opt/altera/fpga_ai_suite_2026.1.1/dla/setupvars.sh
 > ```
 
 We will now run inference with this model.  It is located in
@@ -129,7 +130,7 @@ run inference with `dla_benchmark`.
 cd $COREDLA_WORK/runtime
 
 # Build the runtime
-./build_runtime.sh -target_system_console
+./build_runtime.sh -target_agx5_mdk_jtag_system_console
 
 # Reprogram the FPGA
 quartus_pgm -c 1 -m jtag -o "p;$EXAMPLES_PATH/agilex5/modular_jtag/output_files/top.sof"
@@ -165,14 +166,14 @@ cd $COREDLA_WORK/runtime
 rm -rf build_Release
 
 # Build the runtime
-./build_runtime.sh -disable_jit -target_system_console
+./build_runtime.sh -disable_jit -target_agx5_mdk_jtag_system_console
 
 # Compile the model with 'dla_compiler'
 dla_compiler \
     --march $COREDLA_ROOT/example_architectures/AGX5_Generic.arch \
     --foutput-format open_vino_hetero \
     --network-file $COREDLA_WORK/demo/models/public/resnet-50-tf/FP32/resnet-50-tf.xml \
-    --o $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    --o $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     --batch-size=1 \
     --fanalyze-performance
 
@@ -182,7 +183,7 @@ quartus_pgm -c 1 -m jtag -o "p;$EXAMPLES_PATH/agilex5/modular_jtag/output_files/
 # Run inference in AOT mode
 ./build_Release/dla_benchmark/dla_benchmark \
     -b=1 \
-    -cm $COREDLA_WORK/demo/RN50_Generic_b1.bin \
+    -cm $COREDLA_WORK/demo/RN50_Generic_b1.aot \
     -d=HETERO:FPGA,CPU \
     -niter=8 \
     -plugins $COREDLA_WORK/runtime/build_Release/plugins.xml \
@@ -192,4 +193,5 @@ quartus_pgm -c 1 -m jtag -o "p;$EXAMPLES_PATH/agilex5/modular_jtag/output_files/
     -i $COREDLA_WORK/demo/sample_images \
     -groundtruth_loc $COREDLA_WORK/demo/sample_images/TF_ground_truth.txt
 ```
+
 

@@ -1,0 +1,15 @@
+Upstream-Status: Inappropriate [oe specific]
+
+diff --git a/arch/arm/dts/socfpga_arria10_socdk_sdmmc_handoff.h b/arch/arm/dts/socfpga_arria10_socdk_sdmmc_handoff.h
+index 0b9d9a87c6..f95dd39e4c 100644
+--- a/arch/arm/dts/socfpga_arria10_socdk_sdmmc_handoff.h
++++ b/arch/arm/dts/socfpga_arria10_socdk_sdmmc_handoff.h
+@@ -283,7 +283,7 @@
+ /* Bridge Configuration */
+ #define F2H_AXI_SLAVE 1
+ #define F2SDRAM0_AXI_SLAVE 1
+-#define F2SDRAM1_AXI_SLAVE 0
++#define F2SDRAM1_AXI_SLAVE 1
+ #define F2SDRAM2_AXI_SLAVE 1
+ #define H2F_AXI_MASTER 1
+ #define LWH2F_AXI_MASTER 1

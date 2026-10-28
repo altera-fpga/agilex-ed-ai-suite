@@ -1,0 +1,13 @@
+build_*/
+generated_*/
+rtl/qsys/ase/
+rtl/qsys/board/
+rtl/qsys/ddr_board/
+rtl/qsys/msgdma_bbb/
+rtl/qsys/ip/ase/*/
+rtl/qsys/ip/board/*/
+rtl/qsys/ip/ddr_board/*/
+rtl/qsys/ip/irq_controller/*/
+rtl/qsys/ip/msgdma_bbb/*/
+__pycache__/
+

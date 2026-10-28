@@ -1,0 +1,44 @@
+{
+    "name": "Agilex 5 Spatial JTAG Example Design",
+    "description": "Demonstrate streaming inference over JTAG and target FPGA AI Suite Spatial IP on the Agilex 5 Modular Development Kit (VDS)",
+    "max_instances": 1,
+    "output_files": [
+        {
+            "file": "hw/output_files/system_top.sof",
+            "type": "bitstream"
+        }
+    ],
+    "visible": true,
+    "project_info" : {
+        "board": "Agilex 5E Modular Development Kit",
+        "device_name": "A5ED065BB32AE4S",
+        "family": "Agilex 5",
+        "skip_arch_validation": true,
+        "skip_qor_report": true,
+        "quartus": {
+            "version": "26.3"
+        },
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "22.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "9.4"
+            }
+        ]
+    }
+}

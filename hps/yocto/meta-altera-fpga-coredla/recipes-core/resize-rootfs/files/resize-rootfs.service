@@ -1,0 +1,15 @@
+[Unit]
+Description=Resize Root Filesystem on First Boot
+After=systemd-remount-fs.service
+ConditionPathExists=!/etc/resized
+Wants=systemd-remount-fs.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/resize-rootfs.sh
+RemainAfterExit=yes
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

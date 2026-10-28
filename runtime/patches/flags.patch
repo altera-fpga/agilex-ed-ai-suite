@@ -1,0 +1,76 @@
+diff --git a/cmake/developer_package/target_flags.cmake b/cmake/developer_package/target_flags.cmake
+index 29f23e713e..84d32e6633 100644
+--- a/cmake/developer_package/target_flags.cmake
++++ b/cmake/developer_package/target_flags.cmake
+@@ -113,36 +113,38 @@ endif()
+ 
+ get_property(OV_GENERATOR_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+ 
+-function(ov_glibc_version)
+-    # cmake needs to look at glibc version only when we build for Linux on Linux
+-    if(LINUX)
+-        function(ov_get_definition definition var)
+-            execute_process(COMMAND echo "#include <errno.h>"
+-                            COMMAND "${CMAKE_CXX_COMPILER}" -xc - -E -dM
+-                            COMMAND grep -E "^#define ${definition} "
+-                            OUTPUT_VARIABLE glibc_version_component
+-                            ERROR_VARIABLE error_message
+-                            RESULT_VARIABLE exit_code
+-                            OUTPUT_STRIP_TRAILING_WHITESPACE)
+-
+-            if(NOT exit_code EQUAL 0)
+-                message(FATAL_ERROR "Failed to detect glibc version: ${error_message}\n${glibc_version_component}")
+-            endif()
+-
+-            if(glibc_version_component MATCHES "^#define ${definition} ([0-9]+)")
+-                set("${var}" "${CMAKE_MATCH_1}" PARENT_SCOPE)
+-            else()
+-                message(FATAL_ERROR "Internal error: failed to parse ${definition} from '${glibc_version_component}'")
+-            endif()
+-        endfunction()
+-
+-        ov_get_definition("__GLIBC__" _ov_glibc_major)
+-        ov_get_definition("__GLIBC_MINOR__" _ov_glibc_minor)
+-
+-        set(OV_GLIBC_VERSION "${_ov_glibc_major}.${_ov_glibc_minor}" PARENT_SCOPE)
+-    else()
+-        set(OV_GLIBC_VERSION "0.0" PARENT_SCOPE)
+-    endif()
+-endfunction()
+-
+-ov_glibc_version()
++if(FALSE)
++  function(ov_glibc_version)
++      # cmake needs to look at glibc version only when we build for Linux on Linux
++      if(LINUX)
++          function(ov_get_definition definition var)
++              execute_process(COMMAND echo "#include <errno.h>"
++                              COMMAND "${CMAKE_CXX_COMPILER}" -xc - -E -dM
++                              COMMAND grep -E "^#define ${definition} "
++                              OUTPUT_VARIABLE glibc_version_component
++                              ERROR_VARIABLE error_message
++                              RESULT_VARIABLE exit_code
++                              OUTPUT_STRIP_TRAILING_WHITESPACE)
++
++              if(NOT exit_code EQUAL 0)
++                  message(FATAL_ERROR "Failed to detect glibc version: ${error_message}\n${glibc_version_component}")
++              endif()
++
++              if(glibc_version_component MATCHES "^#define ${definition} ([0-9]+)")
++                  set("${var}" "${CMAKE_MATCH_1}" PARENT_SCOPE)
++              else()
++                  message(FATAL_ERROR "Internal error: failed to parse ${definition} from '${glibc_version_component}'")
++              endif()
++          endfunction()
++
++          ov_get_definition("__GLIBC__" _ov_glibc_major)
++          ov_get_definition("__GLIBC_MINOR__" _ov_glibc_minor)
++
++          set(OV_GLIBC_VERSION "${_ov_glibc_major}.${_ov_glibc_minor}" PARENT_SCOPE)
++      else()
++          set(OV_GLIBC_VERSION "0.0" PARENT_SCOPE)
++      endif()
++  endfunction()
++
++  ov_glibc_version()
++endif()

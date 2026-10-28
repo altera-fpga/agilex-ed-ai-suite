@@ -1,0 +1,24 @@
+Upstream-Status: Inappropriate [oe specific]
+
+diff --git a/arch/arm/dts/socfpga_agilex.dtsi b/arch/arm/dts/socfpga_agilex.dtsi
+index 07fafdc..d9e1657 100644
+--- a/arch/arm/dts/socfpga_agilex.dtsi
++++ b/arch/arm/dts/socfpga_agilex.dtsi
+@@ -623,5 +623,17 @@
+ 				};
+ 			};
+ 		};
++
++		fpgabridge@0 {
++			compatible = "altr,socfpga-hps2fpga-bridge";
++        init-val = <0x1>;
++        u-boot,dm-pre-reloc;
++		};
++
++		fpgabridge@1 {
++			compatible = "altr,socfpga-lwhps2fpga-bridge";
++			init-val = <0x1>;
++			u-boot,dm-pre-reloc;
++		};
+ 	};
+ };

@@ -1,0 +1,46 @@
+{
+    "name": "Agilex 5 PCIe-Attached Example Design with OFS",
+    "description": "Demonstrates ML inference using the Agilex 5 FPGA E-Series 065B Modular Development Kit",
+    "max_instances": 1,
+    "output_files":
+    [
+        {
+            "file": "hw/ofs/dla_afu.gbs",
+            "type": "bitstream"
+        }
+    ],
+    "project_info":
+    {
+        "board": "Agilex 5 FPGA E-Series 065B Modular Development Kit",
+        "device_name": "A5ED065BB32AE4S",
+        "family": "Agilex 5",
+	"common_files": "ofs_common",
+        "quartus": {
+            "version": "26.1",
+            "strict": true
+        },
+        "ofs_version": "2026.1",
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.7"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "9.4"
+            }
+        ]
+    }
+}

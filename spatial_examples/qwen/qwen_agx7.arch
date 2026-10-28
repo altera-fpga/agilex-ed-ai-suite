@@ -1,0 +1,57 @@
+architecture : 'spatial'
+family : 'AGX7'
+target_resource_utilization {
+  alm : 300000
+  m20k : 8000
+  dsp : 6000
+}
+speed_grade : 2
+device_size : "large"
+output_file_prefix : "top"
+max_rom_gather_weights_size : 1000000
+hybrid_graph_support : true
+loop_rolling : true
+hardware {
+  dw: 16
+  dtype : 'BF16'
+  weight_exponent_size : 8
+  weight_mantissa_size : 7
+  mif_init : true
+}
+memory_interfaces {
+  ddr_channel_width : 512
+  ddr_addr_width : 34
+  bank : 0
+  start_addr : 0
+  capacity_gb : 4
+  bandwidth_gb_per_sec : 1
+}
+memory_interfaces {
+  ddr_channel_width : 512
+  ddr_addr_width : 34
+  bank : 1
+  start_addr : 0
+  capacity_gb : 4
+  bandwidth_gb_per_sec : 1
+}
+memory_interfaces {
+  ddr_channel_width : 512
+  ddr_addr_width : 34
+  bank : 2
+  start_addr : 0
+  capacity_gb : 4
+  bandwidth_gb_per_sec : 1
+}
+memory_interfaces {
+  ddr_channel_width : 512
+  ddr_addr_width : 34
+  bank : 3
+  start_addr : 0
+  capacity_gb : 4
+  bandwidth_gb_per_sec : 1
+}
+attention {
+  seq_len: 128
+  q_num_heads: 16
+  q_head_size: 128
+}

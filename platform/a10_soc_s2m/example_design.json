@@ -1,0 +1,51 @@
+{
+    "name": "Arria 10 Streaming-to-Memory SoC Example Design",
+    "description": "Demonstrates streaming-to-memory ML inference using the Agilex 10 FPGA SX SoC Development Kit.",
+    "max_instances": 1,
+    "output_files": [
+        {
+            "file": "hw/output_files/top.core.rbf",
+            "type": "generic"
+        },
+        {
+            "file": "hw/output_files/top.periph.rbf",
+            "type": "generic"
+        }
+    ],
+    "project_info": {
+        "board": "Arria 10 SX SoC Development Kit DK-SOC-10AS066S-D",
+        "device_name": "10AS066N3F40E2SG",
+        "family": "Arria 10",
+        "quartus": {
+            "version": "26.3",
+            "strict": true
+        },
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "22.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.7"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "9.4"
+            }
+        ]
+    }
+}

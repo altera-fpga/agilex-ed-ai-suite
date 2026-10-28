@@ -1,0 +1,74 @@
+Upstream-Status: Inappropriate [oe specific]
+
+diff --git a/arch/arm/boot/dts/intel/socfpga/socfpga_arria10.dtsi b/arch/arm/boot/dts/intel/socfpga/socfpga_arria10.dtsi
+index 403536ac966c..c7efe3507e69 100644
+--- a/arch/arm/boot/dts/intel/socfpga/socfpga_arria10.dtsi
++++ b/arch/arm/boot/dts/intel/socfpga/socfpga_arria10.dtsi
+@@ -909,5 +909,67 @@ watchdog1: watchdog@ffd00300 {
+ 			resets = <&rst L4WD1_RESET>;
+ 			status = "disabled";
+ 		};
++
++		coredla_msgdma: msgdma@ff200000 {
++			status = "okay";
++			compatible = "altr,socfpga-msgdma";
++			reg = <0xff200000 0x00000020>,
++				  <0xff200020 0x00000020>;
++			reg-names = "csr", "desc";
++			interrupt-parent = <&intc>;
++			interrupts = <0 19 4>;
++			#dma-cells = <1>;
++		};
++
++		msgdma_coredla0 {
++			status = "okay";
++			compatible = "intel,msgdma-userio-1.0";
++			mem_start = <0x80000000>;
++			mem_end = <0xFFFFFFFF>;
++			reg-names = "emif";
++			dmas = <&coredla_msgdma 0>;
++			dma-names = "rx-tx";
++		};
++
++		coredla0@ff214000 {
++			status = "okay";
++			compatible = "generic-uio";
++			interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH>;
++			reg = <0xff214000 0x00000400>;
++		};
++
++		stream_msgdma: msgdma@ff201000 {
++			status = "okay";
++			compatible = "altr,socfpga-msgdma";
++			reg = <0xff201000 0x00000020>,
++				  <0xff201020 0x00000020>;
++			reg-names = "csr", "desc";
++			interrupt-parent = <&intc>;
++			interrupts = <0 20 4>;
++			#dma-cells = <1>;
++		};
++
++		msgdma_stream0 {
++			status = "okay";
++			compatible = "intel,msgdma-userio-1.0";
++			mem_start = <0x00000000>;
++			mem_end = <0xFFFFFFFF>;
++			reg-names = "emif";
++			dmas = <&stream_msgdma 0>;
++			dma-names = "tx";
++		};
++
++		stream_controller0@ff210000 {
++			status = "okay";
++			compatible = "generic-uio";
++			reg = <0xff210000 0x00000400>;
++		};
++
++		layout_transform0@ff202000 {
++			status = "okay";
++			compatible = "generic-uio";
++			reg = <0xff202000 0x00000400>;
++		};
+ 	};
+ };
++

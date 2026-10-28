@@ -1,0 +1,62 @@
+// Copyright 2025 Altera Corporation.
+//
+// This software and the related documents are Altera copyrighted materials,
+// and your use of them is governed by the express license under which they
+// were provided to you ("License"). Unless the License provides otherwise,
+// you may not use, modify, copy, publish, distribute, disclose or transmit
+// this software or the related documents without Altera's prior written
+// permission.
+//
+// This software and the related documents are provided as is, with no express
+// or implied warranties, other than those that are expressly stated in the
+// License.
+
+//
+// config.h - Configuration file for defining constants
+//
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// input/output sizes
+#define INPUT_DATA_WIDTH {{in_port.dw}}
+#define INPUT_LANES {{in_port.num_lanes}}
+#define INPUT_SUBVECTORS {{in_port.sub_vectors}}
+#define OUTPUT_DATA_WIDTH {{out_port.dw}}
+#define OUTPUT_LANES {{out_port.num_lanes}}
+#define OUTPUT_SUBVECTORS {{out_port.sub_vectors}}
+//
+// MMIO CSR Offset Mapping in HW
+//
+// READ
+#define CSR_AFU_INFO 5
+#define CSR_WEIGHTS_PROCESSED 6
+#define CSR_READ_REQUESTS_PENDING 7
+// WRITE
+#define CSR_IP_RESET 1
+#define CSR_SET_READ_BURST_LEN 2
+#define CSR_SET_SRC_ADDRESS 3
+#define CSR_SET_DEST_ADDRESS 4
+#define CSR_SET_WRITE_BURST_LEN 5
+#define CSR_SET_WRITE_ADDRESS 6
+#define CSR_SET_CMPL_ADDRESS 7
+//
+// IP Values
+//
+#define IP_RESET_TRUE 1
+#define IP_RESET_FALSE 0
+
+//
+// Burst lengths
+//
+#define MAX_BURST_SIZE (1 << 12) // Max 4KB pages
+
+#define HOST_BUS_NUM_BYTES 64
+
+#define MAX_HOST_MEM_SIZE 1 << 21
+// Benchmarking Configuration
+//
+#define BENCHMARK_CPU_SPEED 2.101
+#define BENCHMARK_RUNTIME_SECONDS 30
+#define BENCHMARK_SIM_RUNTIME_SECONDS 300
+
+#endif // CONFIG_H

@@ -1,0 +1,43 @@
+{
+    "name": "Agilex 7 PCIe-Attached Example Design",
+    "description": "Demonstrates ML inference using the Terasic DE10-Agilex Development Board",
+    "max_instances": 4,
+    "output_files":
+    [
+        {
+            "file": "hw/flat.sof",
+            "type": "bitstream"
+        }
+    ],
+    "project_info":
+    {
+        "board": "Terasic DE10-Agilex Development Board",
+        "device_name": "AGFB014R24B2E2V",
+        "family": "Agilex 7",
+        "quartus": {
+            "version": "26.3"
+        },
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "20.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.7"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            }
+        ]
+    }
+}

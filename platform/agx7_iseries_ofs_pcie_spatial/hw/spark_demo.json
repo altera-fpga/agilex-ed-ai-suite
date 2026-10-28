@@ -1,0 +1,20 @@
+{
+   "version": 1,
+   "afu-image": {
+      "power": 0,
+      "clock-frequency-high": 500,
+      "clock-frequency-low" : 250,
+      "afu-top-interface":
+         {
+            "name": "ofs_plat_afu"
+         },
+      "accelerator-clusters":
+         [
+            {
+               "name": "spark_demo",
+               "total-contexts": 1,
+               "accelerator-type-uuid": "7bca5a7f-f08d-4946-86d3-b0dc6876e115"
+            }
+         ]
+   }
+}

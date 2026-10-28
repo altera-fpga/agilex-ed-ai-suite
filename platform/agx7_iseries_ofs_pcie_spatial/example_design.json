@@ -1,0 +1,46 @@
+{
+    "name": "Agilex 7 PCIe-Attached Spark Magika Example Design with OFS",
+    "description": "Demonstrates Spark AI inference using the Agilex 7 FPGA I-Series Development Kit with OFS (Magika file type detection model)",
+    "max_instances": 1,
+    "output_files":
+    [
+        {
+            "file": "hw/ofs/spark_demo.gbs",
+            "type": "bitstream"
+        },
+        {
+            "file": "hw/port_config.json",
+            "type": "generic"
+        }
+    ],
+    "project_info":
+    {
+        "board": "Agilex 7 FPGA I-Series Development Kit (2x R-Tile and 1x F-Tile)",
+        "device_name": "AGIB027R29A1E1VB",
+        "family": "Agilex 7",
+        "skip_arch_validation": true,
+        "skip_qor_report": true,
+        "quartus": {
+            "version": "26.1",
+            "strict": true
+        },
+        "ofs_version": "2026.1",
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "9.4"
+            }
+        ]
+    }
+}

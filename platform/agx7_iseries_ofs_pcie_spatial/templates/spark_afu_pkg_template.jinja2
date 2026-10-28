@@ -1,0 +1,66 @@
+// Copyright (C) 2022 Intel Corporation
+// SPDX-License-Identifier: MIT
+
+`include "ofs_plat_if.vh"
+
+package spark_afu_pkg;
+
+    localparam HOST_ADDR_BITS = 64;
+    localparam DDR_ADDR_BITS = 32; //Probably need more bits soon
+
+    // Model IP Interface
+    localparam INPUT_NUM_BITS   = {{in_port.dw}};
+    localparam INPUT_NUM_LANES = {{in_port.num_lanes}};
+    localparam INPUT_SUB_VECTORS = {{in_port.sub_vectors}};
+    localparam SPARK_IP_INPUT_BUS_SIZE = INPUT_NUM_BITS * INPUT_NUM_LANES;
+
+    localparam OUTPUT_NUM_BITS  = {{out_port.dw}};
+    localparam OUTPUT_NUM_LANES  = {{out_port.num_lanes}};
+    localparam OUTPUT_SUB_VECTORS = {{out_port.sub_vectors}};
+    localparam SPARK_IP_OUTPUT_BUS_SIZE = OUTPUT_NUM_BITS * OUTPUT_NUM_LANES;
+    
+    // These will be used to size the input and output buffers of the SPARK IP.
+    // These buffers hold incoming data from host (read) and outgoing results back to the host (write)
+    // Allows for sizing them seperately. 
+    // Models may have many more outputs for every input or vice versa.
+    localparam MAX_REQS_IN_FLIGHT = 256;
+    localparam READ_ENGINE_MAX_BURST  = 16384; // Right now these need to be set to match because of CSR only having 1 space, but once CSR seperates them, this can support different sizes
+    localparam WRITE_ENGINE_MAX_BURST = READ_ENGINE_MAX_BURST;
+    localparam MAX_BURST = 
+    (READ_ENGINE_MAX_BURST > WRITE_ENGINE_MAX_BURST) 
+      ?  READ_ENGINE_MAX_BURST 
+      : WRITE_ENGINE_MAX_BURST;
+
+    typedef logic [HOST_ADDR_BITS-1 : 0] t_cmd_host_addr;
+    typedef logic [DDR_ADDR_BITS-1 : 0] t_cmd_dest_addr;
+    typedef logic [8-1 : 0] t_cmd_burst_len;
+    typedef logic [64-1 : 0] t_mmio_full_reg;
+
+    // Read commands (CSR to read engine)
+    typedef struct {
+        logic enable;
+        logic load_model_weights;
+        t_cmd_burst_len burst_len;
+        t_cmd_host_addr src_addr;
+        t_cmd_dest_addr dest_addr;
+    } t_rd_cmd;
+
+    // Read status information
+    typedef struct {
+        t_mmio_full_reg weights_processed;
+        t_mmio_full_reg requests_pending;
+    } t_rd_state;
+
+    // Write commands (CSR to write engine)
+    typedef struct {
+        logic enable;
+        t_cmd_burst_len burst_len;
+        t_cmd_host_addr addr;
+        t_cmd_host_addr cmpl_addr;
+    } t_wr_cmd;
+
+    typedef struct {
+        t_mmio_full_reg requests_pending;
+    } t_wr_state;
+
+endpackage // spark_afu_pkg

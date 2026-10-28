@@ -1,0 +1,7 @@
+echo Loading FPGA Image top.core.rbf...
+load mmc 0:1 ${loadaddr} top.core.rbf && dcache flush; fpga load 0 ${loadaddr} ${filesize}
+bridge enable
+setenv bootargs root=/dev/mmcblk0p2 rootwait rw earlycon console=ttyS0,115200
+load mmc 0:1 0x2400000 Image
+load mmc 0:1 0x6000000 socfpga-agilex-socdk.dtb
+booti 0x2400000 - 0x6000000

@@ -1,0 +1,12 @@
+[Unit]
+Wants=network-pre.target
+Before=network-pre.target
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/hostnamemac.sh
+RemainAfterExit=no
+
+[Install]
+WantedBy=network.target

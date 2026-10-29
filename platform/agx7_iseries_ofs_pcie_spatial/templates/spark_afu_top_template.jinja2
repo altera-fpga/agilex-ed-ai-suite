@@ -1,0 +1,362 @@
+// Copyright (C) 2022 Intel Corporation
+// SPDX-License-Identifier: MIT
+
+`include "ofs_plat_if.vh"
+
+//
+// AFU architecture Top-level. Take in a pair of AXI-MM interfaces, one for CSRs and
+// one for reading and writing host memory.
+// Connect the Workload IP between read and write engines.
+//
+
+module spark_afu_top
+  #(
+    //parameter VCHAN_NUM = 0,
+    parameter NUM_LOCAL_MEM_BANKS = 1     
+   )
+   (
+    // CSR interface (MMIO on the host)
+    ofs_plat_axi_mem_lite_if.to_source mmio64_to_afu,
+
+    // Host memory (DMA)
+    ofs_plat_axi_mem_if.to_sink host_mem,
+
+    // Local memory (DDR)
+    ofs_plat_axi_mem_if.to_sink ddr_mem[NUM_LOCAL_MEM_BANKS]
+    );
+    
+    import ofs_plat_axi_mem_pkg::*;
+    import spark_afu_pkg::*;
+
+    // uClk has been mapped to mmio64_to_afu.clk. We will use this clock
+    // for MMIO transactions.
+    logic clk;
+    assign clk = mmio64_to_afu.clk;
+    logic reset_n = 1'b0;
+    always @(posedge clk) begin
+        reset_n <= mmio64_to_afu.reset_n;
+    end
+
+    // ====================================================================
+    //
+    // CSR (MMIO) manager. Handle all MMIO reads and writes from the host
+    // and output copy commands.
+    //
+    // ====================================================================
+
+
+    // Read engine data interface
+    wire [INPUT_NUM_BITS - 1 : 0] read_data [0 : INPUT_NUM_LANES - 1];
+    wire read_data_valid, read_data_ready;
+    wire read_data_sop, read_data_last;
+    // Read engine result interface
+    wire [OUTPUT_NUM_BITS - 1 : 0] write_data [0 : OUTPUT_NUM_LANES - 1];
+    wire write_data_valid, write_data_ready;
+    wire write_data_sop, write_data_last;
+    //  
+    wire ip_reset_n;
+    //
+    t_rd_cmd   rd_cmd;
+    t_wr_cmd   wr_cmd;
+    t_rd_state rd_state;
+    t_wr_state wr_state;
+    
+    //
+    // The AFU CSR for communicating with PCIe MMIO
+    //
+    csr_mgr #(
+        .MAX_BURST_SIZE(MAX_BURST),
+        .MAX_REQS_IN_FLIGHT(MAX_REQS_IN_FLIGHT)
+    ) csr_mgr_inst (
+        .mmio64_to_afu(mmio64_to_afu),
+
+        .rd_cmd(rd_cmd),
+        .rd_state(rd_state),
+        .wr_cmd(wr_cmd),
+        .wr_state(wr_state),
+        .ip_reset_n(ip_reset_n)
+    );
+        
+    // ====================================================================
+    //
+    // Read engine and requester
+    //
+    // ====================================================================
+
+    // Declare a copy of the host memory read interface. The read ports
+    // will be connected to the read engine and the write ports unused.
+    // This will split the read channels from the write channels but keep
+    // a single interface type.
+    ofs_plat_axi_mem_if #(
+        // Copy the configuration from host_mem
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(host_mem)
+    ) host_mem_rd();
+
+    // Connect read ports to host_mem
+    assign host_mem_rd.clk = clk;
+    assign host_mem_rd.reset_n = reset_n;
+    assign host_mem_rd.instance_number = host_mem.instance_number;
+
+    assign host_mem_rd.rvalid = host_mem.rvalid;
+    assign host_mem.rready = host_mem_rd.rready;
+    assign host_mem_rd.r = host_mem.r;
+    
+    assign host_mem.arvalid = host_mem_rd.arvalid;
+    assign host_mem_rd.arready = host_mem.arready;
+    assign host_mem.ar = host_mem_rd.ar;
+
+    // Write unused
+    assign host_mem_rd.bvalid  = 1'b0;
+    assign host_mem_rd.awready = 1'b0;
+    assign host_mem_rd.wready  = 1'b0;
+    
+    // Declare a pseudo axi interface that will be demuxed from host_mem_rd
+    ofs_plat_axi_mem_if #(
+        // Copy the configuration from host_mem
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(host_mem)
+    ) spark_ip();
+
+    // Declare copies of local mem to interface with read for SPARK IP and writes from host_mem
+
+    // Local memory read interfaces (module scope for port connectivity)
+    ofs_plat_axi_mem_if #(
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(ddr_mem[0])
+    ) spark_ddr_rd[NUM_LOCAL_MEM_BANKS]();
+
+    // Local memory write interfaces (module scope for port connectivity)
+    ofs_plat_axi_mem_if #(
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(ddr_mem[0])
+    ) ddr_mem_load[NUM_LOCAL_MEM_BANKS]();
+
+    ofs_plat_axi_mem_if #(
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(ddr_mem[0])
+    ) spark_ddr_wr[NUM_LOCAL_MEM_BANKS]();
+
+    genvar gi;
+    generate
+    for (gi = 0; gi < NUM_LOCAL_MEM_BANKS; gi = gi + 1) begin : gen_ddr_mem
+
+        // Connect local memory read interfaces
+        assign spark_ddr_rd[gi].clk = clk;
+        assign spark_ddr_rd[gi].reset_n = reset_n;
+        assign spark_ddr_rd[gi].instance_number = ddr_mem[gi].instance_number;
+        assign ddr_mem[gi].arvalid = (ddr_mem_load[gi].aw.addr == 'd15) & spark_ddr_rd[gi].arvalid;
+        assign spark_ddr_rd[gi].arready = (ddr_mem_load[gi].aw.addr == 'd15) & (ddr_mem[gi].arready);
+        assign spark_ddr_rd[gi].ar.user = '0;
+        assign spark_ddr_rd[gi].ar.size = host_mem.ADDR_BYTE_IDX_WIDTH;
+        assign spark_ddr_rd[gi].ar.id = '0;
+        assign spark_ddr_rd[gi].ar.prot = '0;
+        assign ddr_mem[gi].ar = spark_ddr_rd[gi].ar;
+        assign ddr_mem[gi].rready = spark_ddr_rd[gi].rready;
+        assign spark_ddr_rd[gi].rvalid = ddr_mem[gi].rvalid;
+        assign spark_ddr_rd[gi].r = ddr_mem[gi].r;
+        assign spark_ddr_rd[gi].awready = 1'b0;
+        assign spark_ddr_rd[gi].awvalid = 1'b0;
+        assign spark_ddr_rd[gi].wready = 1'b0;
+        assign spark_ddr_rd[gi].wvalid = 1'b0;
+        assign spark_ddr_rd[gi].bready = 1'b0;
+        assign spark_ddr_rd[gi].bvalid = 1'b0;
+
+        // Connect local memory write interfaces
+        assign ddr_mem_load[gi].clk = clk;
+        assign ddr_mem_load[gi].reset_n = reset_n;
+        assign ddr_mem_load[gi].instance_number = ddr_mem[gi].instance_number;
+        assign ddr_mem_load[gi].awready = ddr_mem[gi].awready;
+        assign ddr_mem_load[gi].wready = ddr_mem[gi].wready;
+        assign ddr_mem_load[gi].b = ddr_mem[gi].b;
+        assign ddr_mem_load[gi].bvalid = ddr_mem[gi].bvalid;
+        assign ddr_mem_load[gi].rvalid  = 1'b0;
+        assign ddr_mem_load[gi].arready = 1'b0;
+
+        assign spark_ddr_wr[gi].clk = clk;
+        assign spark_ddr_wr[gi].reset_n = reset_n;
+        assign spark_ddr_wr[gi].instance_number = ddr_mem[gi].instance_number;
+        assign spark_ddr_wr[gi].awready = ddr_mem[gi].awready;
+        assign spark_ddr_wr[gi].wready = ddr_mem[gi].wready;
+        assign spark_ddr_wr[gi].rvalid  = 1'b0;
+        assign spark_ddr_wr[gi].arready = 1'b0;
+        assign spark_ddr_wr[gi].arvalid = 1'b0;
+        assign spark_ddr_wr[gi].rready  = 1'b1;
+        assign spark_ddr_wr[gi].b = ddr_mem[gi].b;
+        assign spark_ddr_wr[gi].bvalid = ddr_mem[gi].bvalid;
+        assign spark_ddr_wr[gi].bready = 1'b1;
+        assign spark_ddr_wr[gi].w.user = '0;
+        assign spark_ddr_wr[gi].w.strb = ~(ofs_plat_host_chan_pkg::DATA_WIDTH_BYTES'(0));
+        assign spark_ddr_wr[gi].aw.id   = '0;
+        assign spark_ddr_wr[gi].aw.prot   = '0;
+        assign spark_ddr_wr[gi].aw.user   = '0;
+        assign spark_ddr_wr[gi].aw.size = host_mem.ADDR_BYTE_IDX_WIDTH;
+
+        assign ddr_mem[gi].awvalid = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].awvalid : ddr_mem_load[gi].awvalid;
+        assign ddr_mem[gi].aw.addr = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].aw.addr : {ddr_mem_load[gi].aw.addr[DDR_ADDR_BITS-1:4], 4'b0}; //Lower 16 bits select the bank
+        assign ddr_mem[gi].aw.id = ddr_mem_load[gi].aw.id;
+        assign ddr_mem[gi].aw.prot = ddr_mem_load[gi].aw.prot;
+        assign ddr_mem[gi].aw.size = ddr_mem_load[gi].aw.size;
+        assign ddr_mem[gi].aw.user = '0;
+        assign ddr_mem[gi].aw.len = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].aw.len : ddr_mem_load[gi].aw.len;
+        assign ddr_mem[gi].wvalid = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].wvalid : ddr_mem_load[gi].wvalid;
+        assign ddr_mem[gi].w = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].w : ddr_mem_load[gi].w;
+        assign ddr_mem[gi].bready = (ddr_mem_load[gi].aw.addr == 'd15)? spark_ddr_wr[gi].bready : ddr_mem_load[gi].bready;
+
+    end
+    endgenerate
+
+    // Read requester
+    //
+
+    // Generates axi-mm read requests to host memory for spark or ddr depending on CSR
+
+    read_requester #(
+        .MAX_REQS_IN_FLIGHT(MAX_REQS_IN_FLIGHT),
+        .NUM_LOCAL_MEM_BANKS(NUM_LOCAL_MEM_BANKS)
+    ) read_requester_inst (
+        .host_mem(host_mem_rd),
+        .ddr_mem(ddr_mem_load),
+        .spark_ip(spark_ip),
+
+        .rd_cmd(rd_cmd),
+        .rd_state(rd_state)
+    );
+
+    //
+    // Read engine
+    //
+    
+    // Translates Axi-MM to axi stream
+
+    read_engine #(
+        .MAX_REQS_IN_FLIGHT(MAX_REQS_IN_FLIGHT),
+        .MAX_BURST_SIZE (READ_ENGINE_MAX_BURST),
+        .HOST_MEM_BUS_SIZE(ofs_plat_host_chan_pkg::DATA_WIDTH_BYTES*8),
+        .SPARK_IP_INPUT_BUS_SIZE(SPARK_IP_INPUT_BUS_SIZE)
+	) afu_read_engine (
+        // Host memory read interface
+        .host_mem(spark_ip),
+        
+        .read_data(read_data),
+        .read_data_sop(read_data_sop),
+        .read_data_last(read_data_last),
+        .read_data_valid(read_data_valid),
+        .read_data_ready(read_data_ready)
+    );
+
+    // ====================================================================
+    //
+    // SPARK IP 
+    //
+    // ====================================================================
+
+    // Avoid bouncing reset
+    reg [2:0] reset_n_sync = 3'b0;
+    always @(posedge clk) begin
+        reset_n_sync <= {reset_n_sync[1:0], ip_reset_n};
+    end
+    {{top.module_name}} spark_model_ip (
+        .aclk(clk),
+        .aresetn(reset_n_sync[2] && reset_n_sync[1] && reset_n_sync[0]),
+
+        .{{in_port.name}}_tdata(read_data),
+        .{{in_port.name}}_tvalid(read_data_valid),
+        .{{in_port.name}}_tuser_sop(read_data_sop),
+        .{{in_port.name}}_tlast(read_data_last),
+        .{{in_port.name}}_tready(read_data_ready),
+
+        .{{out_port.name}}_tdata(write_data),
+        .{{out_port.name}}_tvalid(write_data_valid),
+        .{{out_port.name}}_tuser_sop(write_data_sop),
+        .{{out_port.name}}_tlast(write_data_last),
+        .{{out_port.name}}_tready(write_data_ready){%- if top.weights -%},{%- endif -%}
+        
+        {%- for weight_port in top.weights.ports() -%}
+            {%- if weight_port.rd_wr_en.__and__(weight_port.WRITE_FLAG) %}
+        .{{weight_port.name}}_ddr_wr_tdata(spark_ddr_wr[{{weight_port.bank}}].w.data),
+        .{{weight_port.name}}_ddr_wr_tvalid(spark_ddr_wr[{{weight_port.bank}}].wvalid),
+        .{{weight_port.name}}_ddr_wr_tlast(spark_ddr_wr[{{weight_port.bank}}].w.last),
+        .{{weight_port.name}}_ddr_wr_tready(spark_ddr_wr[{{weight_port.bank}}].wready),
+        .{{weight_port.name}}_write_addr(spark_ddr_wr[{{weight_port.bank}}].aw.addr),
+        .{{weight_port.name}}_write_burst(spark_ddr_wr[{{weight_port.bank}}].aw.len),
+        .{{weight_port.name}}_write_tvalid(spark_ddr_wr[{{weight_port.bank}}].awvalid),
+        .{{weight_port.name}}_write_tready(spark_ddr_wr[{{weight_port.bank}}].awready),
+            {%- endif %}
+            {%- if weight_port.rd_wr_en.__and__(weight_port.READ_FLAG) %}
+        .{{weight_port.name}}_ddr_rd_tdata(spark_ddr_rd[{{weight_port.bank}}].r.data),
+        .{{weight_port.name}}_ddr_rd_tvalid(spark_ddr_rd[{{weight_port.bank}}].rvalid),
+        .{{weight_port.name}}_ddr_rd_tready(spark_ddr_rd[{{weight_port.bank}}].rready),
+        .{{weight_port.name}}_read_addr(spark_ddr_rd[{{weight_port.bank}}].ar.addr),
+        .{{weight_port.name}}_read_burst(spark_ddr_rd[{{weight_port.bank}}].ar.len),
+        .{{weight_port.name}}_read_tvalid(spark_ddr_rd[{{weight_port.bank}}].arvalid),
+        .{{weight_port.name}}_read_tready(spark_ddr_rd[{{weight_port.bank}}].arready){%- if not loop.last %},{%- endif %}
+            {%- endif %}
+        {%- endfor %}
+    );
+
+    {%- for weight_port in top.weights.ports() -%}
+        {%- if not weight_port.rd_wr_en.__and__(weight_port.WRITE_FLAG) %}
+    assign spark_ddr_wr[{{weight_port.bank}}].awvalid = 1'b0;
+    assign spark_ddr_wr[{{weight_port.bank}}].wvalid = 1'b0;
+        {%- endif %}
+        {%- if not weight_port.rd_wr_en.__and__(weight_port.READ_FLAG) %}
+    assign spark_ddr_rd[{{weight_port.bank}}].arvalid = 1'b0;
+    assign spark_ddr_rd[{{weight_port.bank}}].rready = 1'b1;
+        {%- endif %}
+    {%- endfor %}
+    // ====================================================================
+    //
+    // Write engine
+    //
+    // ====================================================================
+
+    // Declare a copy of the host memory write interface. The write ports
+    // will be connected to the write engine and the read ports unused.
+    // This will split the read channels from the write channels but keep
+    // a single interface type.
+    ofs_plat_axi_mem_if #(
+        // Copy the configuration from host_mem
+        `OFS_PLAT_AXI_MEM_IF_REPLICATE_PARAMS(host_mem)
+    ) host_mem_wr();
+
+    //
+    // Connect write ports to host_mem
+    assign host_mem_wr.clk = clk;
+    assign host_mem_wr.reset_n = reset_n;
+    assign host_mem_wr.instance_number = host_mem.instance_number;
+    // B channel
+    assign host_mem_wr.bvalid   = host_mem.bvalid;
+    assign host_mem.bready      = host_mem_wr.bready;
+    assign host_mem_wr.b        = host_mem.b;
+    // AW channel
+    assign host_mem.awvalid     = host_mem_wr.awvalid;
+    assign host_mem_wr.awready  = host_mem.awready;
+    assign host_mem.aw          = host_mem_wr.aw;
+    // W channel 
+    assign host_mem.wvalid      = host_mem_wr.wvalid;
+    assign host_mem_wr.wready   = host_mem.wready;
+    assign host_mem.w           = host_mem_wr.w;
+    //
+    // Read unused
+    assign host_mem_wr.rvalid  = 1'b0;
+    assign host_mem_wr.arready = 1'b0;
+    //
+    // Instantiate write engine
+    // 
+    write_engine #(
+      .MAX_REQS_IN_FLIGHT(MAX_REQS_IN_FLIGHT),
+      .HOST_MEM_BUS_SIZE(ofs_plat_host_chan_pkg::DATA_WIDTH_BYTES*8),
+      .SPARK_IP_OUTPUT_BUS_SIZE(SPARK_IP_OUTPUT_BUS_SIZE)
+	) afu_write_engine (
+      // Host memory write interface
+      .host_mem(host_mem_wr),
+
+      // Stream data from reader to writer
+      .write_data(write_data),
+      .write_data_valid(write_data_valid),
+      .write_data_sop(write_data_sop),
+      .write_data_last(write_data_last),
+      .write_data_ready(write_data_ready),
+
+      // Commands
+      .wr_cmd(wr_cmd),
+      .wr_state(wr_state)
+      );
+
+endmodule

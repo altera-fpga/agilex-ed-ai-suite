@@ -1,0 +1,4 @@
+magika==1.0.3
+onnx
+onnxruntime
+python-dotenv

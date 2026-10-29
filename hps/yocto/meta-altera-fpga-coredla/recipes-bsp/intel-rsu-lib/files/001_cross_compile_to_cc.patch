@@ -1,0 +1,29 @@
+Upstream-Status: Inappropriate [oe specific]
+
+diff --git a/lib/makefile b/lib/makefile
+index 5d8c8bc..4eaa1a1 100644
+--- a/lib/makefile
++++ b/lib/makefile
+@@ -15,18 +15,19 @@ CFLAGS += -Wformat -Wformat-security
+ LDFLAGS := -shared
+ LDFLAGS += -z noexecstack
+ LDFLAGS += -z relro -z now
++LDFLAGS += $(EXTRA_LDFLAGS)
+ 
+ all: librsu.so
+ 
+ install: librsu.so
+ 	cp librsu.so $(INSTALL_PATH)/librsu.so.$(LIBRSU_VER)
+-	ln -s $(INSTALL_PATH)/librsu.so.$(LIBRSU_VER) $(INSTALL_PATH)/librsu.so
++	ln -r -s $(INSTALL_PATH)/librsu.so.$(LIBRSU_VER) $(INSTALL_PATH)/librsu.so
+ 
+ librsu.so: $(SRC:.c=.o)
+-	$(CROSS_COMPILE)gcc $(LDFLAGS) -o $@ $(SRC:.c=.o)
++	$(CC) $(LDFLAGS) -o $@ $(SRC:.c=.o)
+ 
+ %.o : %.c
+-	$(CROSS_COMPILE)gcc $(CFLAGS) -DLIBRSU_VER=$(LIBRSU_VER) -fPIC -c $< -o $@
++	$(CC) $(CFLAGS) -DLIBRSU_VER=$(LIBRSU_VER) -fPIC -c $< -o $@
+ 
+ clean:
+ 	rm -rf $(SRC:.c=.o) librsu.so

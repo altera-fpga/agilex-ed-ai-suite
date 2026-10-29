@@ -1,0 +1,37 @@
+diff --git a/src/core/src/type/bfloat16.cpp b/src/core/src/type/bfloat16.cpp
+index 6e612b0cfe..dee498d795 100644
+--- a/src/core/src/type/bfloat16.cpp
++++ b/src/core/src/type/bfloat16.cpp
+@@ -61,6 +61,23 @@ size_t bfloat16::size() const {
+ #    pragma GCC diagnostic ignored "-Wuninitialized"
+ #endif
+ 
++#if 1
++// GCC 11 fails due to the reinterpret_cast violating alaising rules
++union bfloat16_uint32
++{
++    float f;
++    uint32_t v;
++};
++
++bfloat16::operator float() const
++{
++    uint32_t tmp = (static_cast<uint32_t>(m_value) << 16);
++    union bfloat16_uint32 fv;
++    fv.v = tmp;
++
++    return fv.f;
++}
++#else
+ bfloat16::operator float() const {
+     uint32_t tmp = 0;
+     uint32_t* ptmp = &tmp;
+@@ -68,7 +85,7 @@ bfloat16::operator float() const {
+     const float* f = reinterpret_cast<const float*>(ptmp);
+     return *f;
+ }
+-
++#endif
+ #if defined __GNUC__ && __GNUC__ == 11
+ #    pragma GCC diagnostic pop
+ #endif

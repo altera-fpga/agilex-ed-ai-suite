@@ -1,0 +1,15 @@
+# config files
+spark_demo.json
+
+# afu files
+spark_afu_pkg.sv
+write_engine.sv
+p2s.sv
+csr_mgr.sv
+read_engine.sv
+spark_afu_top.sv
+read_packet_manager.sv
+read_requester.sv
+write_packet_manager.sv
+s2p.sv
+ofs_plat_afu.sv

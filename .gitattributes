@@ -1,0 +1,3 @@
+# Keep mixed CRLF/LF. Git text conversion strips CRs and breaks
+# patch --dry-run against the Terasic DE10 BSP (SAP-20364).
+platform/agx7_de10_pcie/de10_bsp.patch -text

@@ -1,0 +1,4 @@
+# Do not keep the native module beside sources; it installs under <INSTALL_DIR>/lib
+spatial_mmd*.so
+spatial_mmd*.pyd
+__pycache__/

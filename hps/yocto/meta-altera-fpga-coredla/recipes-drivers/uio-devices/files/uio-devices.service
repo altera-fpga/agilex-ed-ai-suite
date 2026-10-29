@@ -1,0 +1,11 @@
+[Unit]
+Description=Load UIO
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/uio-devices start
+ExecStop=/usr/bin/uio-devices stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

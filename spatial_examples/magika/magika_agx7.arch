@@ -1,0 +1,7 @@
+architecture : 'spatial'
+family : 'AGX7'
+speed_grade : 2
+device_size : "large"
+output_file_prefix : "top_level"
+hybrid_graph_support : false
+loop_rolling : false

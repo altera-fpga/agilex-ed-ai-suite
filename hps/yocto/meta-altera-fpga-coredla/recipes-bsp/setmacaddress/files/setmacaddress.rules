@@ -1,0 +1,1 @@
+KERNEL=="eth*", ACTION=="add", RUN += "/usr/bin/setmacaddress.sh %k"

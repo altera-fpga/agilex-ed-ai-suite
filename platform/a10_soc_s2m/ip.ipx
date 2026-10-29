@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<library>
+<index file="non_acds_ip/intel_layout_transform/core_hw.tcl" />
+</library>

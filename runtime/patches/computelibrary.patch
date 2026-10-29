@@ -1,0 +1,47 @@
+diff --git a/SConstruct b/SConstruct
+index 68c518a4a0..6ecfb05672 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -109,7 +109,7 @@ vars.AddVariables(
+     BoolVariable("cppthreads", "Enable C++11 threads backend", True),
+     PathVariable("build_dir", "Specify sub-folder for the build", ".", PathVariable.PathAccept),
+     PathVariable("install_dir", "Specify sub-folder for the install", "", PathVariable.PathAccept),
+-    BoolVariable("exceptions", "Enable/disable C++ exception support", True),
++    BoolVariable("exceptions", "Enable/disable C++ exception support", False),
+     BoolVariable("high_priority", "Generate a library containing only the high priority operators", False),
+     PathVariable("linker_script", "Use an external linker script", "", PathVariable.PathAccept),
+     PathVariable("external_tests_dir", """Add examples, benchmarks and tests to the tests suite from an external path. In order to use this option, the external tests directory must have the following structure: 
+@@ -324,11 +324,14 @@ if env['multi_isa']:
+ else: # NONE "multi_isa" builds
+ 
+     if 'v7a' in env['arch']:
+-        env.Append(CXXFLAGS = ['-march=armv7-a', '-mthumb', '-mfpu=neon'])
+-        if (env['os'] == 'android' or env['os'] == 'tizen') and not 'hf' in env['arch']:
+-            env.Append(CXXFLAGS = ['-mfloat-abi=softfp'])
++        if ('-march' in env['extra_cxx_flags']) or ('-mcpu' in env['extra_cxx_flags']):
++            print("INFO: Re-use march/mcpu settings")
+         else:
+-            env.Append(CXXFLAGS = ['-mfloat-abi=hard'])
++            env.Append(CXXFLAGS = ['-march=armv7-a', '-mthumb', '-mfpu=neon'])
++            if env['os'] == 'android' or env['os'] == 'tizen':
++                env.Append(CXXFLAGS = ['-mfloat-abi=softfp'])
++            else:
++                env.Append(CXXFLAGS = ['-mfloat-abi=hard'])
+     elif 'v8.6-a' in env['arch']:
+         if 'armv8.6-a-sve2' in env['arch']:
+             env.Append(CXXFLAGS = ['-march=armv8.6-a+sve2'])
+@@ -649,7 +652,7 @@ if env['exceptions']:
+     if env['os'] == 'bare_metal' and env['arch'] == 'armv7a':
+         print("WARNING: Building tests for bare metal and armv7a is not supported")
+         Return()
+-    SConscript('./tests/SConscript', variant_dir='%s/tests' % build_path, duplicate=0)
++    # SConscript('./tests/SConscript', variant_dir='%s/tests' % build_path, duplicate=0)
+ 
+ # Unknown variables are not allowed
+ # Note: we must delay the call of UnknownVariables until after
+@@ -657,4 +660,4 @@ if env['exceptions']:
+ unknown = vars.UnknownVariables()
+ if unknown:
+     print("Unknown variables: %s" % " ".join(unknown.keys()))
+-    Exit(1)
++    # Exit(1)

@@ -1,0 +1,23 @@
+# Python packages for building and running the spatial runtimes.
+# Versions match the fpga-ai-suite-spatial compiler package so that one
+# environment can both compile a model and run it on the FPGA.
+
+# Build dependency. CMake uses this to build the spatial_mmd pybind module,
+# so it must be installed before build_runtime.sh.
+pybind11==3.0.2
+
+# Shared by every runtime.
+numpy==2.2.6
+
+# image_classification_runtime.py
+pillow==12.3.0
+
+# magika_runtime.py
+magika==1.0.3
+
+# llm_runtime.py
+torch==2.12.0
+transformers==5.12.1
+safetensors==0.8.0
+huggingface-hub==1.17.0
+tqdm==4.69.1

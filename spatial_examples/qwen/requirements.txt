@@ -1,0 +1,13 @@
+numpy
+openvino==2025.4.0
+torch
+transformers
+accelerate
+safetensors
+ml_dtypes
+protobuf
+opt_einsum
+scipy
+graphviz
+onnx
+memory_profiler

@@ -1,0 +1,13 @@
+<ie>
+    <plugins>
+        <plugin name="AUTO" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_auto_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="BATCH" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_auto_batch_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="CPU" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_intel_cpu_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="GNA" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_intel_gna_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="GPU" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_intel_gpu_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="MULTI" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_auto_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <plugin name="MYRIAD" location="${CMAKE_SHARED_LIBRARY_PREFIX}openvino_intel_myriad_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}"></plugin>
+        <!-- plugins location must point to absolute or relative path for CoreDLA plugins -->
+${DLA_PLUGIN_ENTRIES}
+    </plugins>
+</ie>

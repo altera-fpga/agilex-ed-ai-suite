@@ -1,0 +1,51 @@
+{
+    "name": "Agilex 5 Hostless JTAG Example Design",
+    "description": "Demonstrate inference over JTAG and target FPGA AI Suite IP on the Agilex 5E Modular Development Kit.",
+    "max_instances": 1,
+    "output_files": [
+        {
+            "file": "hw/output_files/top.sof",
+            "type": "bitstream"
+        }
+    ],
+    "visible": true,
+    "project_info": {
+        "board": "Agilex 5E Modular Development Kit",
+        "device_name": "A5ED065BB32AE4S",
+        "family": "Agilex 5",
+        "quartus": {
+            "version": "26.3",
+            "strict": true
+        },
+        "os_support": [
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "22.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "ubuntu",
+                "version": "24.04"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.7"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "8.10"
+            },
+            {
+                "os_type": "linux",
+                "distribution": "rhel",
+                "version": "9.4"
+            },
+            {
+                "os_type": "windows"
+            }
+        ]
+    }
+}

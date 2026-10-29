@@ -1,0 +1,144 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "linux_gcc",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "environment": {
+        "CC": "gcc",
+        "CXX": "g++"
+      },
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
+        "CMAKE_CXX_FLAGS_DEBUG" : "@$env{COREDLA_ROOT}/sdl_gcc_debug.rsp -Wno-error=cpp",
+        "CMAKE_C_FLAGS_DEBUG" : "@$env{COREDLA_ROOT}/sdl_gcc_debug.rsp -Wno-error=cpp",
+        "CMAKE_CXX_FLAGS_RELEASE": "@$env{COREDLA_ROOT}/sdl_gcc.rsp -Wno-error=cpp",
+        "CMAKE_C_FLAGS_RELEASE": "@$env{COREDLA_ROOT}/sdl_gcc.rsp -Wno-error=cpp",
+        "CMAKE_POSITION_INDEPENDENT_CODE" : "ON",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install"
+      }
+    },
+    {
+      "name" : "a10_pac",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "LIBOPAE-C_ROOT" : "$env{OPAE_SDK_ROOT}",
+        "HW_BUILD_PLATFORM" : "DCP_A10_PAC"
+      }
+    },
+    {
+      "name" : "de10_agilex",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "DE10_AGILEX"
+      }
+    },
+    {
+      "name" : "agx7_i_dk",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX7_I_DK",
+        "LIBOPAE-C_ROOT" : "$env{OPAE_SDK_ROOT}"
+      }
+    },
+    {
+      "name" : "agx7_n6001",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX7_N6001",
+        "LIBOPAE-C_ROOT" : "$env{OPAE_SDK_ROOT}"
+      }
+    },
+    {
+      "name" : "agx7_iseries_spatial",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX7_ISERIES_SPATIAL",
+        "LIBOPAE-C_ROOT" : "$env{OPAE_SDK_ROOT}"
+      }
+    },
+    {
+      "name" : "agx5_jtag_spatial",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX5_JTAG_SPATIAL"
+      }
+    },
+    {
+      "name" : "agx5_mdk",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX5_MDK",
+        "LIBOPAE-C_ROOT" : "$env{OPAE_SDK_ROOT}"
+      }
+    },
+    {
+      "name" : "emulation",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "EMULATION"
+      }
+    },
+    {
+      "name" : "agx5_system_console",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX5_SYSTEM_CONSOLE",
+        "RUNTIME_POLLING" : "1"
+      }
+    },
+    {
+      "name" : "agx3_system_console",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "AGX3_SYSTEM_CONSOLE",
+        "RUNTIME_POLLING" : "1"
+      }
+    },
+    {
+      "name" : "system_console_streaming",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "SYSTEM_CONSOLE_STREAMING",
+        "RUNTIME_POLLING" : "1"
+      }
+    },
+    {
+      "name" : "hps_platform",
+      "inherits" : "linux_gcc",
+      "cacheVariables": {
+        "HW_BUILD_PLATFORM" : "HPS_PLATFORM",
+        "RUNTIME_POLLING" : "1",
+        "DISABLE_JIT" : "TRUE",
+        "HPS_BUILD_MACHINE" : "arria10",
+        "CMAKE_TOOLCHAIN_FILE" : "${sourceDir}/embedded_arm_sdk/cmake/embedded.arm.cmake"
+      }
+    },
+    {
+      "name": "windows_msvc",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
+        "CMAKE_CXX_FLAGS_DEBUG" : "@$env{COREDLA_ROOT}/sdl_msvc_debug.rsp",
+        "CMAKE_C_FLAGS_DEBUG" : "@$env{COREDLA_ROOT}/sdl_msvc_debug.rsp",
+        "CMAKE_CXX_FLAGS_RELEASE": "@$env{COREDLA_ROOT}/sdl_msvc.rsp",
+        "CMAKE_C_FLAGS_RELEASE": "@$env{COREDLA_ROOT}/sdl_msvc.rsp",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/install",
+        "CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS": "ON",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreadedDLL",
+        "Boost_COMPILER": "vc142"
+      }
+    }
+  ]
+}

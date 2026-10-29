@@ -1,0 +1,107 @@
+Upstream-Status: Inappropriate [oe specific]
+
+diff --git a/arch/arm/dts/socfpga_agilex-u-boot.dtsi b/arch/arm/dts/socfpga_agilex-u-boot.dtsi
+index ed844c0..3e28407 100644
+--- a/arch/arm/dts/socfpga_agilex-u-boot.dtsi
++++ b/arch/arm/dts/socfpga_agilex-u-boot.dtsi
+@@ -53,6 +53,14 @@
+ 		u-boot,dm-pre-reloc;
+ 	};
+ 
++	soc_noc_fw_mpfe_csr_inst_0_mpfe_scr@f8020000 {
++		reg = <0xf8020000 0x0000001c>;
++		intel,offset-settings =
++			/* Enable non-secure access through F2S bridge */
++			<0x00000018 0x00000100>;
++		u-boot,dm-pre-reloc;
++	};
++
+ 	/*
+ 	 * Both firewall and QOS regs accessed by CPU in MPFE has
+ 	 * dependency on CCU configuration above.
+@@ -65,17 +73,37 @@
+ 	soc_noc_fw_ddr_fpga2sdram_inst_0_ddr_scr@f8020200 {
+ 		reg = <0xf8020200 0x00000050>;
+ 		intel,offset-settings =
++			/* enable */
+ 			<0x0000000 0x00000000>,
++			/* enable set */
+ 			<0x0000004 0x00000000>,
++			/* enable clear */
+ 			<0x0000008 0x00000000>,
++			/*
++			 * DDR 0-2GB
++			 * mpuregion0addr_base
++			 */
+ 			<0x0000010 0x00000000>,
++			/* mpuregion0addr_baseext */
+ 			<0x0000014 0x00000000>,
+-			<0x0000018 0x0000ffff>,
++			/* mpuregion0addr_limit */
++			<0x0000018 0x7fffffff>,
++			/* mpuregion0addr_limitext *
+ 			<0x000001c 0x00000000>,
+-			<0x0000020 0x00000000>,
+-			<0x0000024 0x00000000>,
+-			<0x0000028 0x0000ffff>,
+-			<0x000002c 0x00000000>,
++			/*
++			 * DDR 2-4GB
++			 * using alias address for >2GB memory region
++			 * mpuregion1addr_base
++			 */
++			<0x0000020 0x80000000>,
++			/* mpuregion1addr_baseext */
++			<0x0000024 0x00000001>,
++			/* mpuregion1addr_limit */
++			<0x0000028 0xffffffff>,
++			/* mpuregion1addr_limitext */
++			<0x000002c 0x00000001>,
++			/* enable set */
++			<0x0000004 0x00000003>,
+ 			<0x0000030 0x00000000>,
+ 			<0x0000034 0x00000000>,
+ 			<0x0000038 0x0000ffff>,
+@@ -90,17 +118,37 @@
+ 	soc_noc_fw_ddr_fpga2sdram_inst_1_ddr_scr@f8020300 {
+ 		reg = <0xf8020300 0x00000050>;
+ 		intel,offset-settings =
++			/* enable */
+ 			<0x0000000 0x00000000>,
++			/* enable set */
+ 			<0x0000004 0x00000000>,
++			/* enable clear */
+ 			<0x0000008 0x00000000>,
++			/*
++			 * DDR 0-2GB
++			 * mpuregion0addr_base
++			 */
+ 			<0x0000010 0x00000000>,
++			/* mpuregion0addr_baseext */
+ 			<0x0000014 0x00000000>,
+-			<0x0000018 0x0000ffff>,
++			/* mpuregion0addr_limit */
++			<0x0000018 0x7fffffff>,
++			/* mpuregion0addr_limitext *
+ 			<0x000001c 0x00000000>,
+-			<0x0000020 0x00000000>,
+-			<0x0000024 0x00000000>,
+-			<0x0000028 0x0000ffff>,
+-			<0x000002c 0x00000000>,
++			/*
++			 * DDR 2-4GB
++			 * using alias address for >2GB memory region
++			 * mpuregion1addr_base
++			 */
++			<0x0000020 0x80000000>,
++			/* mpuregion1addr_baseext */
++			<0x0000024 0x00000001>,
++			/* mpuregion1addr_limit */
++			<0x0000028 0xffffffff>,
++			/* mpuregion1addr_limitext */
++			<0x000002c 0x00000001>,
++			/* enable set */
++			<0x0000004 0x00000003>,
+ 			<0x0000030 0x00000000>,
+ 			<0x0000034 0x00000000>,
+ 			<0x0000038 0x0000ffff>,
